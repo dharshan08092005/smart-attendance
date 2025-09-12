@@ -98,7 +98,7 @@ export default function FacultyDashboardPage() {
             const leavesResponse = await fetch(`/api/faculty/leaves?facultyId=${userData.id}&status=pending`);
             const leavesData = await leavesResponse.json();
             if (leavesData.success) {
-              setLeaves(leavesData.data.map((leave: any) => ({
+              setLeaves(leavesData.data.map((leave: { _id: string; studentName: string; registrationNumber: string; date: string; reason: string; type: string; status: string }) => ({
                 id: leave._id,
                 studentName: leave.studentName,
                 registrationNumber: leave.registrationNumber,
@@ -308,7 +308,7 @@ export default function FacultyDashboardPage() {
             <div>
               <div className="uppercase text-xs/5 opacity-90">Hi</div>
               <div className="text-2xl font-bold tracking-wide">SANDHIYA</div>
-              <div className="text-sm opacity-90">Here's your dashboard overview</div>
+              <div className="text-sm opacity-90">Here&apos;s your dashboard overview</div>
             </div>
           </div>
         </div>

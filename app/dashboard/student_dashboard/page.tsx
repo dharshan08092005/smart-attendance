@@ -187,7 +187,7 @@ export default function StudentDashboardPage() {
             <div>
               <div className="uppercase text-xs/5 opacity-90">Hi</div>
               <div className="text-2xl font-bold tracking-wide">{student.name.toUpperCase()}</div>
-              <div className="text-sm opacity-90">Here's your dashboard overview</div>
+              <div className="text-sm opacity-90">Here&apos;s your dashboard overview</div>
             </div>
           </div>
           <button

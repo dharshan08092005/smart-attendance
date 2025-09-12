@@ -154,7 +154,7 @@ export default function AdminDashboard() {
         const studentsData = await studentsResponse.json();
         
         if (studentsData.success) {
-          setStudents(studentsData.data.map((s: any) => ({
+          setStudents(studentsData.data.map((s: { _id: string; name: string; registrationNumber: string; email: string; attendancePercentage?: number; GPA?: number }) => ({
             id: s._id,
             name: s.name,
             registrationNumber: s.registrationNumber,
@@ -169,7 +169,7 @@ export default function AdminDashboard() {
         const facultyData = await facultyResponse.json();
         
         if (facultyData.success) {
-          setFaculty(facultyData.data.map((f: any) => ({
+          setFaculty(facultyData.data.map((f: { _id: string; name: string; department: string; email: string; subjects?: string[]; assignedStudentsCount?: number }) => ({
             id: f._id,
             name: f.name,
             department: f.department,
@@ -197,8 +197,8 @@ export default function AdminDashboard() {
         ]);
         
         setError(null);
-      } catch (e: any) {
-        setError(e.message || 'Failed to load');
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Failed to load');
       } finally {
         setLoading(false);
       }
@@ -229,7 +229,7 @@ export default function AdminDashboard() {
             <div>
               <div className="uppercase text-xs/5 opacity-90">Hi</div>
               <div className="text-2xl font-bold tracking-wide">ADMIN</div>
-              <div className="text-sm opacity-90">Here's your dashboard overview</div>
+              <div className="text-sm opacity-90">Here&apos;s your dashboard overview</div>
             </div>
           </div>
         </div>
@@ -295,7 +295,12 @@ export default function AdminDashboard() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* OTP Generation */}
-          <ModernCard title="🔐 Generate OTPs" subtitle="Create OTPs for attendance by periods and date range">
+          <div className="rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="text-base font-semibold text-foreground">🔐 Generate OTPs</h3>
+              <p className="text-sm text-foreground/60">Create OTPs for attendance by periods and date range</p>
+            </div>
+            <div className="p-4">
             <form
               className="space-y-6"
               onSubmit={async (e) => {
@@ -334,7 +339,7 @@ export default function AdminDashboard() {
                   } else {
                     setOtpError(data.error || 'Failed to generate OTPs');
                   }
-                } catch (err: any) {
+                } catch (err: unknown) {
                   setOtpError(err.message || 'Failed to generate OTPs');
                 } finally {
                   setOtpLoading(false);
@@ -345,16 +350,24 @@ export default function AdminDashboard() {
                 <div className="md:col-span-2">
                   <label className="block text-sm font-semibold text-gray-700 mb-3">Generation Mode</label>
                   <div className="flex gap-4">
-                    <RadioOption
-                      checked={otpBulkForm.mode === 'single'}
-                      onChange={() => setOtpBulkForm({ ...otpBulkForm, mode: 'single' })}
-                      label="Single Date"
-                    />
-                    <RadioOption
-                      checked={otpBulkForm.mode === 'range'}
-                      onChange={() => setOtpBulkForm({ ...otpBulkForm, mode: 'range' })}
-                      label="Date Range"
-                    />
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={otpBulkForm.mode === 'single'}
+                        onChange={() => setOtpBulkForm({ ...otpBulkForm, mode: 'single' })}
+                        className="text-violet-600"
+                      />
+                      Single Date
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={otpBulkForm.mode === 'range'}
+                        onChange={() => setOtpBulkForm({ ...otpBulkForm, mode: 'range' })}
+                        className="text-violet-600"
+                      />
+                      Date Range
+                    </label>
                   </div>
                 </div>
 
@@ -460,10 +473,15 @@ export default function AdminDashboard() {
                 </button>
               </form>
             </div>
-          </section>
+          </div>
 
           {/* Bulk Attendance Update */}
-          <ModernCard title="📊 Bulk Attendance Update" subtitle="Update attendance for multiple periods and dates">
+          <div className="rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="text-base font-semibold text-foreground">📊 Bulk Attendance Update</h3>
+              <p className="text-sm text-foreground/60">Update attendance for multiple periods and dates</p>
+            </div>
+            <div className="p-4">
             <form
               className="space-y-6"
               onSubmit={async (e) => {
@@ -506,7 +524,7 @@ export default function AdminDashboard() {
                   } else {
                     setAttnBulkMessage(data.error || 'Failed to update attendance');
                   }
-                } catch (err: any) {
+                } catch (err: unknown) {
                   setAttnBulkMessage(err.message || 'Failed to update attendance');
                 } finally {
                   setAttnBulkSubmitting(false);
@@ -514,18 +532,26 @@ export default function AdminDashboard() {
               }}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormInput
-                  label="Student ID"
-                  value={attnBulkForm.studentId}
-                  onChange={(e) => setAttnBulkForm({ ...attnBulkForm, studentId: e.target.value })}
-                  placeholder="Enter student ID"
-                />
-                <FormInput
-                  label="Subject ID (Optional)"
-                  value={attnBulkForm.subjectId}
-                  onChange={(e) => setAttnBulkForm({ ...attnBulkForm, subjectId: e.target.value })}
-                  placeholder="Enter subject ID"
-                />
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Student ID</label>
+                  <input
+                    type="text"
+                    value={attnBulkForm.studentId}
+                    onChange={(e) => setAttnBulkForm({ ...attnBulkForm, studentId: e.target.value })}
+                    placeholder="Enter student ID"
+                    className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Subject ID (Optional)</label>
+                  <input
+                    type="text"
+                    value={attnBulkForm.subjectId}
+                    onChange={(e) => setAttnBulkForm({ ...attnBulkForm, subjectId: e.target.value })}
+                    placeholder="Enter subject ID"
+                    className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                  />
+                </div>
 
                   <div className="md:col-span-2">
                     <label className="block text-xs/5 text-foreground/60 mb-2">Date Mode</label>
@@ -666,7 +692,7 @@ export default function AdminDashboard() {
                 </button>
               </form>
             </div>
-          </section>
+          </div>
         </div>
 
         {/* Students Table */}

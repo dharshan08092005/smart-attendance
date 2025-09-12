@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 type AttendanceRecord = {
@@ -66,7 +66,7 @@ export default function AdvancedAIPredictor({ studentId, targetPercentage = 75 }
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'patterns' | 'insights' | 'action'>('overview');
 
-  const fetchPredictions = async () => {
+  const fetchPredictions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -86,11 +86,11 @@ export default function AdvancedAIPredictor({ studentId, targetPercentage = 75 }
     } finally {
       setLoading(false);
     }
-  };
+  }, [studentId, targetPercentage]);
 
   useEffect(() => {
     fetchPredictions();
-  }, [studentId, targetPercentage]);
+  }, [fetchPredictions]);
 
   const getTrendIcon = (trend: number) => {
     if (trend > 2) return '📈';
@@ -104,7 +104,7 @@ export default function AdvancedAIPredictor({ studentId, targetPercentage = 75 }
     return 'text-blue-600';
   };
 
-  const getRiskLevel = (percentage: number) => {
+  const getRiskLevel = (percentage: number): { level: string; color: string } => {
     if (percentage < 60) return { level: 'High', color: 'text-red-600 bg-red-50 border-red-200' };
     if (percentage < 75) return { level: 'Medium', color: 'text-yellow-600 bg-yellow-50 border-yellow-200' };
     return { level: 'Low', color: 'text-green-600 bg-green-50 border-green-200' };
@@ -216,7 +216,7 @@ export default function AdvancedAIPredictor({ studentId, targetPercentage = 75 }
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => setActiveTab(tab.key as 'overview' | 'patterns' | 'insights' | 'action')}
               className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition ${
                 activeTab === tab.key
                   ? 'border-blue-600 text-blue-600 bg-blue-50'

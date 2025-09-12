@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import AdvancedAIPredictor from './AdvancedAIPredictor';
 
@@ -49,7 +49,7 @@ export default function AIAttendancePredictor({ studentId, targetPercentage = 75
   const [customTarget, setCustomTarget] = useState(targetPercentage);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const fetchPredictions = async () => {
+  const fetchPredictions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -69,11 +69,11 @@ export default function AIAttendancePredictor({ studentId, targetPercentage = 75
     } finally {
       setLoading(false);
     }
-  };
+  }, [studentId, customTarget]);
 
   useEffect(() => {
     fetchPredictions();
-  }, [studentId, customTarget]);
+  }, [studentId, customTarget, fetchPredictions]);
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
