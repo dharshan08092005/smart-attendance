@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import AIAttendancePredictor from "../../../components/AIAttendancePredictor";
 type ObjectId = string;
 
 type Subject = {
@@ -102,7 +103,7 @@ export default function StudentDashboardPage() {
   const [isSessionsOpen, setIsSessionsOpen] = useState(false);
   const [isLeaveOpen, setIsLeaveOpen] = useState(false);
   const [otpValue, setOtpValue] = useState("");
-  const [activeView, setActiveView] = useState<"home" | "attendance" | "leave" | "profile" | "notifications">("home");
+  const [activeView, setActiveView] = useState<"home" | "attendance" | "leave" | "profile" | "notifications" | "ai-predictions">("home");
   const [selectedAttendanceDate, setSelectedAttendanceDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const calendarInputRef = useRef<HTMLInputElement | null>(null);
   const [leaveType, setLeaveType] = useState<string>("leave");
@@ -281,6 +282,7 @@ export default function StudentDashboardPage() {
           {([
             { key: "home", label: "Home" },
             { key: "attendance", label: "Attendance" },
+            { key: "ai-predictions", label: "AI Predictions" },
             { key: "leave", label: "Leave" },
             { key: "notifications", label: "Notifications" },
           ] as const).map((t) => (
@@ -513,6 +515,10 @@ export default function StudentDashboardPage() {
           </section>
         )}
 
+        {activeView === "ai-predictions" && (
+          <AIAttendancePredictor studentId={student._id} targetPercentage={75} />
+        )}
+
         {activeView === "notifications" && (
           <section className="rounded-xl border border-black/10 bg-white shadow-sm">
             <div className="p-4 border-b border-gray-200">
@@ -627,7 +633,9 @@ export default function StudentDashboardPage() {
           <button className={`${"attendance" === activeView ? "text-violet-600" : "text-gray-400"} hover:text-violet-600`} onClick={() => setActiveView("attendance")} aria-label="Attendance">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M3 9h18M8 4v16" stroke="currentColor" strokeWidth="1.6"/></svg>
           </button>
-          <div className="w-10" />
+          <button className={`${"ai-predictions" === activeView ? "text-violet-600" : "text-gray-400"} hover:text-violet-600`} onClick={() => setActiveView("ai-predictions")} aria-label="AI Predictions">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9.5 2A2.5 2.5 0 0 0 7 4.5v15A2.5 2.5 0 0 0 9.5 22h5a2.5 2.5 0 0 0 2.5-2.5v-15A2.5 2.5 0 0 0 14.5 2h-5Z" stroke="currentColor" strokeWidth="1.6"/><path d="M9 6h6M9 10h6M9 14h4" stroke="currentColor" strokeWidth="1.6"/></svg>
+          </button>
           <button className={`${"leave" === activeView ? "text-violet-600" : "text-gray-400"} hover:text-violet-600`} onClick={() => setActiveView("leave")} aria-label="Leave">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6a2 2 0 0 1 2-2h8.5a2 2 0 0 1 1.6.8L19 7.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6Z" stroke="currentColor" strokeWidth="1.6"/><path d="M10 3v6h6" stroke="currentColor" strokeWidth="1.6"/></svg>
           </button>

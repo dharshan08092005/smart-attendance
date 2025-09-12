@@ -208,78 +208,92 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="font-sans min-h-screen p-0 sm:p-8 bg-[radial-gradient(60%_60%_at_50%_0%,rgba(59,130,246,0.15)_0%,transparent_70%)] bg-[length:100%_100%] bg-no-repeat flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading dashboard...</p>
+          <p className="text-foreground/60 font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Header */}
-      <div className="backdrop-blur-sm bg-white/80 border-b border-white/20 shadow-xl sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                  Admin Dashboard
-                </h1>
-                <p className="text-gray-600 mt-1 font-medium">Comprehensive management system for academic operations</p>
-              </div>
+    <div className="font-sans min-h-screen p-0 sm:p-8 bg-[radial-gradient(60%_60%_at_50%_0%,rgba(59,130,246,0.15)_0%,transparent_70%)] bg-[length:100%_100%] bg-no-repeat">
+      {/* Mobile header */}
+      <div className="sm:hidden bg-blue-600 text-white px-4 pt-6 pb-5 rounded-b-3xl shadow-sm">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center font-semibold">
+              ADMIN
             </div>
-            <div className="flex gap-3">
-              <ActionButton variant="blue" icon="plus">Add Student</ActionButton>
-              <ActionButton variant="indigo" icon="user">Add Faculty</ActionButton>
-              <ActionButton variant="emerald" icon="book">Add Subject</ActionButton>
+            <div>
+              <div className="uppercase text-xs/5 opacity-90">Hi</div>
+              <div className="text-2xl font-bold tracking-wide">ADMIN</div>
+              <div className="text-sm opacity-90">Here's your dashboard overview</div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-0 pt-4 sm:pt-0 pb-24 sm:pb-0">
+        {/* Header */}
+        <header className="hidden sm:flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">Admin Dashboard</h1>
+            <p className="text-sm/6 text-foreground/70">Comprehensive management system for academic operations</p>
+          </div>
+          <div className="flex gap-3">
+            <button className="h-10 px-4 rounded-md text-sm font-medium inline-flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M12 6v6m0 0v6m0-6h6m-6 0H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Add Student
+            </button>
+            <button className="h-10 px-4 rounded-md text-sm font-medium inline-flex items-center gap-2 bg-violet-600 text-white hover:bg-violet-700 transition shadow-sm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Add Faculty
+            </button>
+            <button className="h-10 px-4 rounded-md text-sm font-medium inline-flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700 transition shadow-sm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Add Subject
+            </button>
+          </div>
+        </header>
+
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-5 h-5 text-red-600">⚠️</div>
-            <p className="text-red-700 font-medium">{error}</p>
+          <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-5 h-5 text-rose-600">⚠️</div>
+            <p className="text-rose-700 font-medium">{error}</p>
           </div>
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <StatCard 
-            title="Total Students" 
-            value={stats?.totalStudents ?? 0} 
-            icon="👥"
-            gradient="from-blue-500 to-blue-600"
-            bgGradient="from-blue-50 to-blue-100"
-          />
-          <StatCard 
-            title="Total Faculty" 
-            value={stats?.totalFaculty ?? 0} 
-            icon="👨‍🏫"
-            gradient="from-indigo-500 to-indigo-600"
-            bgGradient="from-indigo-50 to-indigo-100"
-          />
-          <StatCard 
-            title="Total Subjects" 
-            value={stats?.totalSubjects ?? 0} 
-            icon="📚"
-            gradient="from-emerald-500 to-emerald-600"
-            bgGradient="from-emerald-50 to-emerald-100"
-          />
-        </div>
+        <section className="rounded-xl border border-black/10 bg-white shadow-sm">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-foreground">Overview Statistics</h2>
+          </div>
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+              <div className="text-xs/5 text-foreground/60">Total Students</div>
+              <div className="mt-1 text-2xl font-semibold text-foreground">{stats?.totalStudents ?? 0}</div>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+              <div className="text-xs/5 text-foreground/60">Total Faculty</div>
+              <div className="mt-1 text-2xl font-semibold text-foreground">{stats?.totalFaculty ?? 0}</div>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+              <div className="text-xs/5 text-foreground/60">Total Subjects</div>
+              <div className="mt-1 text-2xl font-semibold text-foreground">{stats?.totalSubjects ?? 0}</div>
+            </div>
+          </div>
+        </section>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* OTP Generation */}
           <ModernCard title="🔐 Generate OTPs" subtitle="Create OTPs for attendance by periods and date range">
             <form
@@ -344,77 +358,109 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {otpBulkForm.mode === 'single' ? (
+                  {otpBulkForm.mode === 'single' ? (
+                    <div className="md:col-span-2">
+                      <label className="block text-xs/5 text-foreground/60 mb-2">Select Date</label>
+                      <input
+                        type="date"
+                        value={otpBulkForm.date}
+                        onChange={(e) => setOtpBulkForm({ ...otpBulkForm, date: e.target.value })}
+                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-xs/5 text-foreground/60 mb-2">From Date</label>
+                        <input
+                          type="date"
+                          value={otpBulkForm.fromDate}
+                          onChange={(e) => setOtpBulkForm({ ...otpBulkForm, fromDate: e.target.value })}
+                          className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs/5 text-foreground/60 mb-2">To Date</label>
+                        <input
+                          type="date"
+                          value={otpBulkForm.toDate}
+                          onChange={(e) => setOtpBulkForm({ ...otpBulkForm, toDate: e.target.value })}
+                          className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        />
+                      </div>
+                    </>
+                  )}
+
                   <div className="md:col-span-2">
-                    <FormInput
-                      label="Select Date"
-                      type="date"
-                      value={otpBulkForm.date}
-                      onChange={(e) => setOtpBulkForm({ ...otpBulkForm, date: e.target.value })}
-                    />
+                    <label className="block text-xs/5 text-foreground/60 mb-2">Select Periods</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[1,2,3,4,5,6,7].map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => {
+                            setOtpBulkForm({
+                              ...otpBulkForm,
+                              periods: otpBulkForm.periods.includes(p)
+                                ? otpBulkForm.periods.filter(x => x !== p)
+                                : [...otpBulkForm.periods, p]
+                            });
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                            otpBulkForm.periods.includes(p)
+                              ? 'bg-violet-600 border-violet-600 text-white'
+                              : 'bg-white border-gray-200 text-foreground hover:border-violet-300'
+                          }`}
+                        >
+                          Period {p}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                ) : (
-                  <>
-                    <FormInput
-                      label="From Date"
-                      type="date"
-                      value={otpBulkForm.fromDate}
-                      onChange={(e) => setOtpBulkForm({ ...otpBulkForm, fromDate: e.target.value })}
-                    />
-                    <FormInput
-                      label="To Date"
-                      type="date"
-                      value={otpBulkForm.toDate}
-                      onChange={(e) => setOtpBulkForm({ ...otpBulkForm, toDate: e.target.value })}
-                    />
-                  </>
+                </div>
+
+                {otpError && (
+                  <div className="flex items-center gap-2 text-rose-600 text-sm bg-rose-50 p-3 rounded-lg">
+                    <span>⚠️</span>
+                    {otpError}
+                  </div>
                 )}
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Select Periods</label>
-                  <div className="flex flex-wrap gap-3">
-                    {[1,2,3,4,5,6,7].map((p) => (
-                      <PeriodChip
-                        key={p}
-                        period={p}
-                        selected={otpBulkForm.periods.includes(p)}
-                        onClick={() => {
-                          setOtpBulkForm({
-                            ...otpBulkForm,
-                            periods: otpBulkForm.periods.includes(p)
-                              ? otpBulkForm.periods.filter(x => x !== p)
-                              : [...otpBulkForm.periods, p]
-                          });
-                        }}
-                      />
-                    ))}
+                {otpBulkResult && otpBulkResult.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-semibold text-foreground">Generated OTPs</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {otpBulkResult.map((otp, idx) => (
+                        <div key={idx} className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                          <div className="text-center mb-2">
+                            <p className="text-xs text-foreground/60 mb-1">Period {otp.period}</p>
+                            <p className={`text-xl font-mono font-bold ${otp.remaining <= 0 ? 'line-through text-gray-400' : 'text-foreground'}`}>
+                              {otp.otp}
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            {otp.remaining <= 0 ? (
+                              <span className="text-rose-600 font-semibold text-xs">🔴 Expired</span>
+                            ) : (
+                              <span className="text-emerald-600 font-semibold text-xs">⏱️ {otp.remaining}s remaining</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </div>
+                )}
 
-              {otpError && (
-                <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-lg">
-                  <span>⚠️</span>
-                  {otpError}
-                </div>
-              )}
-
-              {otpBulkResult && otpBulkResult.length > 0 && (
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-800">Generated OTPs</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {otpBulkResult.map((otp, idx) => (
-                      <OtpCard key={idx} otp={otp} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <SubmitButton loading={otpLoading} variant="indigo">
-                {otpLoading ? 'Generating...' : 'Generate OTPs'}
-              </SubmitButton>
-            </form>
-          </ModernCard>
+                <button
+                  type="submit"
+                  disabled={otpLoading}
+                  className="w-full h-10 px-4 rounded-md text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {otpLoading ? 'Generating...' : 'Generate OTPs'}
+                </button>
+              </form>
+            </div>
+          </section>
 
           {/* Bulk Attendance Update */}
           <ModernCard title="📊 Bulk Attendance Update" subtitle="Update attendance for multiple periods and dates">
@@ -481,533 +527,388 @@ export default function AdminDashboard() {
                   placeholder="Enter subject ID"
                 />
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Date Mode</label>
-                  <div className="flex gap-4">
-                    <RadioOption
-                      checked={attnBulkForm.mode === 'single'}
-                      onChange={() => setAttnBulkForm({ ...attnBulkForm, mode: 'single' })}
-                      label="Single Date"
-                    />
-                    <RadioOption
-                      checked={attnBulkForm.mode === 'range'}
-                      onChange={() => setAttnBulkForm({ ...attnBulkForm, mode: 'range' })}
-                      label="Date Range"
-                    />
+                  <div className="md:col-span-2">
+                    <label className="block text-xs/5 text-foreground/60 mb-2">Date Mode</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          checked={attnBulkForm.mode === 'single'}
+                          onChange={() => setAttnBulkForm({ ...attnBulkForm, mode: 'single' })}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
+                          attnBulkForm.mode === 'single' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
+                        }`}>
+                          {attnBulkForm.mode === 'single' && <div className="w-1.5 h-1.5 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>}
+                        </div>
+                        <span className="text-sm font-medium text-foreground">Single Date</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          checked={attnBulkForm.mode === 'range'}
+                          onChange={() => setAttnBulkForm({ ...attnBulkForm, mode: 'range' })}
+                          className="sr-only"
+                        />
+                        <div className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
+                          attnBulkForm.mode === 'range' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
+                        }`}>
+                          {attnBulkForm.mode === 'range' && <div className="w-1.5 h-1.5 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>}
+                        </div>
+                        <span className="text-sm font-medium text-foreground">Date Range</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {attnBulkForm.mode === 'single' ? (
+                    <div className="md:col-span-2">
+                      <label className="block text-xs/5 text-foreground/60 mb-2">Select Date</label>
+                      <input
+                        type="date"
+                        value={attnBulkForm.date}
+                        onChange={(e) => setAttnBulkForm({ ...attnBulkForm, date: e.target.value })}
+                        className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-xs/5 text-foreground/60 mb-2">From Date</label>
+                        <input
+                          type="date"
+                          value={attnBulkForm.fromDate}
+                          onChange={(e) => setAttnBulkForm({ ...attnBulkForm, fromDate: e.target.value })}
+                          className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs/5 text-foreground/60 mb-2">To Date</label>
+                        <input
+                          type="date"
+                          value={attnBulkForm.toDate}
+                          onChange={(e) => setAttnBulkForm({ ...attnBulkForm, toDate: e.target.value })}
+                          className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="md:col-span-2">
+                    <label className="block text-xs/5 text-foreground/60 mb-2">Select Periods</label>
+                    <div className="flex flex-wrap gap-2">
+                      {[1,2,3,4,5,6,7].map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => {
+                            setAttnBulkForm({
+                              ...attnBulkForm,
+                              periods: attnBulkForm.periods.includes(p)
+                                ? attnBulkForm.periods.filter(x => x !== p)
+                                : [...attnBulkForm.periods, p]
+                            });
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+                            attnBulkForm.periods.includes(p)
+                              ? 'bg-emerald-600 border-emerald-600 text-white'
+                              : 'bg-white border-gray-200 text-foreground hover:border-emerald-300'
+                          }`}
+                        >
+                          Period {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs/5 text-foreground/60 mb-2">Attendance Status</label>
+                    <select
+                      value={attnBulkForm.status}
+                      onChange={(e) => setAttnBulkForm({ ...attnBulkForm, status: e.target.value as 'present' | 'absent' })}
+                      className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                    >
+                      <option value="present">Present</option>
+                      <option value="absent">Absent</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs/5 text-foreground/60 mb-2">Method</label>
+                    <select
+                      value={attnBulkForm.method}
+                      onChange={(e) => setAttnBulkForm({ ...attnBulkForm, method: e.target.value as 'otp' | 'qr' | 'manual' })}
+                      className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                    >
+                      <option value="manual">Manual</option>
+                      <option value="otp">OTP</option>
+                      <option value="qr">QR Code</option>
+                    </select>
                   </div>
                 </div>
 
-                {attnBulkForm.mode === 'single' ? (
-                  <div className="md:col-span-2">
-                    <FormInput
-                      label="Select Date"
-                      type="date"
-                      value={attnBulkForm.date}
-                      onChange={(e) => setAttnBulkForm({ ...attnBulkForm, date: e.target.value })}
-                    />
+                {attnBulkMessage && (
+                  <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
+                    attnBulkMessage.includes('Successfully') 
+                      ? 'text-emerald-700 bg-emerald-50' 
+                      : 'text-rose-600 bg-rose-50'
+                  }`}>
+                    <span>{attnBulkMessage.includes('Successfully') ? '✅' : '⚠️'}</span>
+                    {attnBulkMessage}
                   </div>
-                ) : (
-                  <>
-                    <FormInput
-                      label="From Date"
-                      type="date"
-                      value={attnBulkForm.fromDate}
-                      onChange={(e) => setAttnBulkForm({ ...attnBulkForm, fromDate: e.target.value })}
-                    />
-                    <FormInput
-                      label="To Date"
-                      type="date"
-                      value={attnBulkForm.toDate}
-                      onChange={(e) => setAttnBulkForm({ ...attnBulkForm, toDate: e.target.value })}
-                    />
-                  </>
                 )}
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Select Periods</label>
-                  <div className="flex flex-wrap gap-3">
-                    {[1,2,3,4,5,6,7].map((p) => (
-                      <PeriodChip
-                        key={p}
-                        period={p}
-                        selected={attnBulkForm.periods.includes(p)}
-                        onClick={() => {
-                          setAttnBulkForm({
-                            ...attnBulkForm,
-                            periods: attnBulkForm.periods.includes(p)
-                              ? attnBulkForm.periods.filter(x => x !== p)
-                              : [...attnBulkForm.periods, p]
-                          });
-                        }}
-                        variant="emerald"
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <FormSelect
-                  label="Attendance Status"
-                  value={attnBulkForm.status}
-                  onChange={(e) => setAttnBulkForm({ ...attnBulkForm, status: e.target.value as 'present' | 'absent' })}
-                  options={[
-                    { value: 'present', label: 'Present' },
-                    { value: 'absent', label: 'Absent' }
-                  ]}
-                />
-                <FormSelect
-                  label="Method"
-                  value={attnBulkForm.method}
-                  onChange={(e) => setAttnBulkForm({ ...attnBulkForm, method: e.target.value as 'otp' | 'qr' | 'manual' })}
-                  options={[
-                    { value: 'manual', label: 'Manual' },
-                    { value: 'otp', label: 'OTP' },
-                    { value: 'qr', label: 'QR Code' }
-                  ]}
-                />
-              </div>
-
-              {attnBulkMessage && (
-                <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
-                  attnBulkMessage.includes('Successfully') 
-                    ? 'text-emerald-700 bg-emerald-50' 
-                    : 'text-red-600 bg-red-50'
-                }`}>
-                  <span>{attnBulkMessage.includes('Successfully') ? '✅' : '⚠️'}</span>
-                  {attnBulkMessage}
-                </div>
-              )}
-
-              <SubmitButton loading={attnBulkSubmitting} variant="emerald">
-                {attnBulkSubmitting ? 'Updating...' : 'Apply Bulk Update'}
-              </SubmitButton>
-            </form>
-          </ModernCard>
+                <button
+                  type="submit"
+                  disabled={attnBulkSubmitting}
+                  className="w-full h-10 px-4 rounded-md text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {attnBulkSubmitting ? 'Updating...' : 'Apply Bulk Update'}
+                </button>
+              </form>
+            </div>
+          </section>
         </div>
 
         {/* Students Table */}
-        <ModernCard title="👥 Students Overview" subtitle="Manage all registered students">
-          <DataTable
-            headers={['Name', 'Registration No.', 'Email', 'Attendance', 'GPA']}
-            data={students.map(s => [
-              s.name,
-              s.registrationNumber,
-              s.email,
-              <AttendanceBadge key={s.id} percentage={s.attendancePercentage} />,
-              <GPABadge key={s.id} gpa={s.gpa} />
-            ])}
-            emptyMessage="No students found"
-          />
-        </ModernCard>
-
-        {/* Faculty and Subjects */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <ModernCard title="👨‍🏫 Faculty Members" subtitle="Academic staff management">
-            <DataTable
-              headers={['Name', 'Department', 'Email', 'Subjects', 'Students']}
-              data={faculty.map(f => [
-                f.name,
-                f.department,
-                f.email,
-                <CountBadge key={f.id} count={f.subjects} color="blue" />,
-                <CountBadge key={f.id} count={f.assignedStudents} color="emerald" />
-              ])}
-              emptyMessage="No faculty members found"
-            />
-          </ModernCard>
-
-          <ModernCard title="📚 Subjects" subtitle="Course and subject management">
-            <DataTable
-              headers={['Subject Name', 'Code', 'Type']}
-              data={subjects.map(s => [
-                s.name,
-                <CodeBadge key={s.id} code={s.code} />,
-                <TypeBadge key={s.id} type={s.type} />
-              ])}
-              emptyMessage="No subjects found"
-            />
-          </ModernCard>
-        </div>
-
-        {/* Attendance and Leaves */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <ModernCard title="📊 Recent Attendance" subtitle="Latest attendance records">
-            <DataTable
-              headers={['Student', 'Subject', 'Date', 'Status', 'Method']}
-              data={attendance.map(a => [
-                a.studentName,
-                a.subject,
-                new Date(a.date).toLocaleDateString(),
-                <StatusBadge key={a.id} status={a.status} />,
-                <MethodBadge key={a.id} method={a.method} />
-              ])}
-              emptyMessage="No attendance records found"
-            />
-          </ModernCard>
-
-          <ModernCard title="📋 Leave Requests" subtitle="Student leave applications">
-            <div className="space-y-4">
-              {leaves.map((leave) => (
-                <LeaveCard key={leave.id} leave={leave} />
-              ))}
-              {leaves.length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                  <p>No leave requests found</p>
+        <section className="rounded-xl border border-black/10 bg-white shadow-sm">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-foreground">👥 Students Overview</h2>
+            <span className="text-xs/5 text-foreground/60">Manage all registered students</span>
+          </div>
+          <div className="p-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-left">
+                  <tr>
+                    <th className="px-3 py-2 font-medium text-foreground/80">Name</th>
+                    <th className="px-3 py-2 font-medium text-foreground/80">Registration No.</th>
+                    <th className="px-3 py-2 font-medium text-foreground/80">Email</th>
+                    <th className="px-3 py-2 font-medium text-foreground/80">Attendance</th>
+                    <th className="px-3 py-2 font-medium text-foreground/80">GPA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map(s => (
+                    <tr key={s.id} className="border-t border-gray-200 hover:bg-gray-50">
+                      <td className="px-3 py-2 text-foreground">{s.name}</td>
+                      <td className="px-3 py-2 text-foreground">{s.registrationNumber}</td>
+                      <td className="px-3 py-2 text-foreground">{s.email}</td>
+                      <td className="px-3 py-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                          s.attendancePercentage >= 90 ? 'bg-emerald-100 text-emerald-800' :
+                          s.attendancePercentage >= 75 ? 'bg-amber-100 text-amber-800' :
+                          'bg-rose-100 text-rose-800'
+                        }`}>
+                          {s.attendancePercentage}%
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                          s.gpa >= 3.7 ? 'bg-emerald-100 text-emerald-800' :
+                          s.gpa >= 3.0 ? 'bg-blue-100 text-blue-800' :
+                          'bg-amber-100 text-amber-800'
+                        }`}>
+                          {s.gpa.toFixed(2)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {students.length === 0 && (
+                <div className="text-center py-12 text-foreground/60">
+                  <p className="text-sm">No students found</p>
                 </div>
               )}
             </div>
-          </ModernCard>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Enhanced Components
-function StatCard({ title, value, icon, gradient, bgGradient }: { 
-  title: string; 
-  value: number | string; 
-  icon: string;
-  gradient: string;
-  bgGradient: string;
-}) {
-  return (
-    <div className={`bg-gradient-to-br ${bgGradient} backdrop-blur-sm border border-white/20 rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-2xl">{icon}</div>
-        <div className={`w-8 h-1 bg-gradient-to-r ${gradient} rounded-full`}></div>
-      </div>
-      <p className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">{value}</p>
-      <p className="text-sm font-medium text-gray-600">{title}</p>
-    </div>
-  );
-}
-
-function ModernCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-white/80 backdrop-blur-sm border border-white/20 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-        {subtitle && <p className="text-gray-600 mt-1 font-medium">{subtitle}</p>}
-      </div>
-      <div className="p-6">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function ActionButton({ variant, icon, children }: { variant: string; icon: string; children: React.ReactNode }) {
-  const variants = {
-    blue: 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700',
-    indigo: 'from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700',
-    emerald: 'from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
-  };
-  
-  const icons = {
-    plus: 'M12 6v6m0 0v6m0-6h6m-6 0H6',
-    user: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-    book: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'
-  };
-
-  return (
-    <button className={`px-6 py-3 bg-gradient-to-r ${variants[variant]} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2`}>
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={icons[icon]} />
-      </svg>
-      {children}
-    </button>
-  );
-}
-
-function FormInput({ label, type = 'text', value, onChange, placeholder }: any) {
-  return (
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-2">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-      />
-    </div>
-  );
-}
-
-function FormSelect({ label, value, onChange, options }: any) {
-  return (
-    <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-2">{label}</label>
-      <select
-        value={value}
-        onChange={onChange}
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/50 backdrop-blur-sm"
-      >
-        {options.map((opt: any) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function RadioOption({ checked, onChange, label }: any) {
-  return (
-    <label className="flex items-center gap-3 cursor-pointer">
-      <div className="relative">
-        <input
-          type="radio"
-          checked={checked}
-          onChange={onChange}
-          className="sr-only"
-        />
-        <div className={`w-5 h-5 rounded-full border-2 transition-all duration-200 ${
-          checked ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
-        }`}>
-          {checked && <div className="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>}
-        </div>
-      </div>
-      <span className="font-medium text-gray-700">{label}</span>
-    </label>
-  );
-}
-
-function PeriodChip({ period, selected, onClick, variant = 'blue' }: any) {
-  const variants = {
-    blue: selected ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300',
-    emerald: selected ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-gray-700 border-gray-200 hover:border-emerald-300'
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-2 rounded-xl border-2 font-semibold transition-all duration-200 ${variants[variant]} hover:shadow-md`}
-    >
-      Period {period}
-    </button>
-  );
-}
-
-function OtpCard({ otp }: any) {
-  const expired = otp.remaining <= 0;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otp.otp)}`;
-
-  return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-lg">
-      <div className="text-center mb-4">
-        <p className="text-xs text-gray-500 mb-1">Period {otp.period}</p>
-        <p className={`text-2xl font-mono font-bold ${expired ? 'line-through text-gray-400' : 'text-gray-800'}`}>
-          {otp.otp}
-        </p>
-      </div>
-      
-      <div className="flex justify-center mb-4">
-        {!expired ? (
-          <img src={qrUrl} alt={`QR for ${otp.otp}`} className="w-32 h-32 rounded-lg shadow-md" />
-        ) : (
-          <div className="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
-            <span className="text-gray-400 text-sm font-medium">Expired</span>
           </div>
-        )}
-      </div>
-      
-      <div className="text-center">
-        {expired ? (
-          <span className="text-red-600 font-semibold text-sm">🔴 Expired</span>
-        ) : (
-          <span className="text-emerald-600 font-semibold text-sm">⏱️ {otp.remaining}s remaining</span>
-        )}
-      </div>
-    </div>
-  );
-}
+        </section>
 
-function SubmitButton({ loading, variant, children }: any) {
-  const variants = {
-    indigo: loading ? 'bg-gray-400' : 'bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700',
-    emerald: loading ? 'bg-gray-400' : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700'
-  };
+        {/* Faculty and Subjects */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <section className="rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground">👨‍🏫 Faculty Members</h2>
+              <span className="text-xs/5 text-foreground/60">Academic staff management</span>
+            </div>
+            <div className="p-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-left">
+                    <tr>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Name</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Department</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Email</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Subjects</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Students</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {faculty.map(f => (
+                      <tr key={f.id} className="border-t border-gray-200 hover:bg-gray-50">
+                        <td className="px-3 py-2 text-foreground">{f.name}</td>
+                        <td className="px-3 py-2 text-foreground">{f.department}</td>
+                        <td className="px-3 py-2 text-foreground">{f.email}</td>
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                            {f.subjects}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                            {f.assignedStudents}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {faculty.length === 0 && (
+                  <div className="text-center py-12 text-foreground/60">
+                    <p className="text-sm">No faculty members found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
 
-  return (
-    <button
-      type="submit"
-      disabled={loading}
-      className={`w-full px-6 py-4 ${variants[variant]} text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:cursor-not-allowed`}
-    >
-      {loading && (
-        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block mr-2"></div>
-      )}
-      {children}
-    </button>
-  );
-}
-
-function DataTable({ headers, data, emptyMessage }: any) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
-            {headers.map((header: string, index: number) => (
-              <th key={index} className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                {header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {data.map((row: any[], index: number) => (
-            <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
-              {row.map((cell, cellIndex) => (
-                <td key={cellIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {data.length === 0 && (
-        <div className="text-center py-12 text-gray-500">
-          <p className="text-lg font-medium">{emptyMessage}</p>
+          <section className="rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground">📚 Subjects</h2>
+              <span className="text-xs/5 text-foreground/60">Course and subject management</span>
+            </div>
+            <div className="p-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-left">
+                    <tr>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Subject Name</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Code</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subjects.map(s => (
+                      <tr key={s.id} className="border-t border-gray-200 hover:bg-gray-50">
+                        <td className="px-3 py-2 text-foreground">{s.name}</td>
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-mono font-semibold bg-gray-100 text-gray-800">
+                            {s.code}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold capitalize ${
+                            s.type.toLowerCase() === 'core' ? 'bg-blue-100 text-blue-800' :
+                            s.type.toLowerCase() === 'elective' ? 'bg-purple-100 text-purple-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {s.type}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {subjects.length === 0 && (
+                  <div className="text-center py-12 text-foreground/60">
+                    <p className="text-sm">No subjects found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
         </div>
-      )}
-    </div>
-  );
-}
 
-function AttendanceBadge({ percentage }: { percentage: number }) {
-  const getColor = (pct: number) => {
-    if (pct >= 90) return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    if (pct >= 75) return 'bg-amber-100 text-amber-800 border-amber-200';
-    return 'bg-red-100 text-red-800 border-red-200';
-  };
+        {/* Attendance and Leaves */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <section className="rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground">📊 Recent Attendance</h2>
+              <span className="text-xs/5 text-foreground/60">Latest attendance records</span>
+            </div>
+            <div className="p-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-left">
+                    <tr>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Student</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Subject</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Date</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Status</th>
+                      <th className="px-3 py-2 font-medium text-foreground/80">Method</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendance.map(a => (
+                      <tr key={a.id} className="border-t border-gray-200 hover:bg-gray-50">
+                        <td className="px-3 py-2 text-foreground">{a.studentName}</td>
+                        <td className="px-3 py-2 text-foreground">{a.subject}</td>
+                        <td className="px-3 py-2 text-foreground">{new Date(a.date).toLocaleDateString()}</td>
+                        <td className="px-3 py-2">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                            a.status === 'present' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                          }`}>
+                            {a.status === 'present' ? '✅ Present' : '❌ Absent'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+                            {a.method === 'otp' ? '🔢' : a.method === 'qr' ? '📱' : '✋'} {a.method.toUpperCase()}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {attendance.length === 0 && (
+                  <div className="text-center py-12 text-foreground/60">
+                    <p className="text-sm">No attendance records found</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
 
-  return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${getColor(percentage)}`}>
-      {percentage}%
-    </span>
-  );
-}
-
-function GPABadge({ gpa }: { gpa: number }) {
-  const getColor = (score: number) => {
-    if (score >= 3.7) return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-    if (score >= 3.0) return 'bg-blue-100 text-blue-800 border-blue-200';
-    return 'bg-amber-100 text-amber-800 border-amber-200';
-  };
-
-  return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${getColor(gpa)}`}>
-      {gpa.toFixed(2)}
-    </span>
-  );
-}
-
-function CountBadge({ count, color }: { count: number; color: string }) {
-  const colors = {
-    blue: 'bg-blue-100 text-blue-800 border-blue-200',
-    emerald: 'bg-emerald-100 text-emerald-800 border-emerald-200'
-  };
-
-  return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${colors[color]}`}>
-      {count}
-    </span>
-  );
-}
-
-function CodeBadge({ code }: { code: string }) {
-  return (
-    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-mono font-semibold bg-gray-100 text-gray-800 border border-gray-200">
-      {code}
-    </span>
-  );
-}
-
-function TypeBadge({ type }: { type: string }) {
-  const getColor = (t: string) => {
-    switch (t.toLowerCase()) {
-      case 'core': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'elective': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold capitalize border ${getColor(type)}`}>
-      {type}
-    </span>
-  );
-}
-
-function StatusBadge({ status }: { status: 'present' | 'absent' }) {
-  return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold border ${
-      status === 'present' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-red-100 text-red-800 border-red-200'
-    }`}>
-      {status === 'present' ? '✅ Present' : '❌ Absent'}
-    </span>
-  );
-}
-
-function MethodBadge({ method }: { method: 'otp' | 'qr' | 'manual' }) {
-  const getIcon = (m: string) => {
-    switch (m) {
-      case 'otp': return '🔢';
-      case 'qr': return '📱';
-      case 'manual': return '✋';
-      default: return '📝';
-    }
-  };
-
-  return (
-    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
-      {getIcon(method)} {method.toUpperCase()}
-    </span>
-  );
-}
-
-function LeaveCard({ leave }: { leave: AdminLeave }) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'approved': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'medical': return '🏥';
-      case 'personal': return '👤';
-      default: return '📝';
-    }
-  };
-
-  return (
-    <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-4 border border-gray-200 hover:shadow-md transition-all duration-200">
-      <div className="flex items-start justify-between mb-3">
-        <h4 className="font-semibold text-gray-800">{leave.studentName}</h4>
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(leave.status)}`}>
-          {leave.status.toUpperCase()}
-        </span>
+          <section className="rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground">📋 Leave Requests</h2>
+              <span className="text-xs/5 text-foreground/60">Student leave applications</span>
+            </div>
+            <div className="p-4 space-y-3">
+              {leaves.map((leave) => (
+                <div key={leave.id} className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-foreground">{leave.studentName}</h4>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                      leave.status === 'pending' ? 'bg-amber-100 text-amber-800' :
+                      leave.status === 'approved' ? 'bg-emerald-100 text-emerald-800' :
+                      'bg-rose-100 text-rose-800'
+                    }`}>
+                      {leave.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-foreground/60 mb-2">
+                    <span className="flex items-center gap-1">
+                      {leave.type === 'medical' ? '🏥' : leave.type === 'personal' ? '👤' : '📝'} {leave.type}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      📅 {new Date(leave.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-foreground/70 bg-white rounded-lg p-2">
+                    {leave.reason}
+                  </p>
+                </div>
+              ))}
+              {leaves.length === 0 && (
+                <div className="text-center py-12 text-foreground/60">
+                  <p className="text-sm">No leave requests found</p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
-      
-      <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-        <span className="flex items-center gap-1">
-          {getTypeIcon(leave.type)} {leave.type}
-        </span>
-        <span className="flex items-center gap-1">
-          📅 {new Date(leave.date).toLocaleDateString()}
-        </span>
-      </div>
-      
-      <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-3">
-        {leave.reason}
-      </p>
     </div>
   );
 }

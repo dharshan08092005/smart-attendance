@@ -249,6 +249,21 @@ export default function FacultyDashboardPage() {
     });
   }
 
+  function handleSendMessage(): void {
+    const text = chatInput.trim();
+    if (!text) return;
+    const userMsg = { id: `u-${Date.now()}`, role: "user" as const, content: text };
+    setChatMessages((curr) => [...curr, userMsg]);
+    setChatInput("");
+    // Mock assistant response
+    setTimeout(() => {
+      setChatMessages((curr) => [
+        ...curr,
+        { id: `a-${Date.now()}`, role: "assistant", content: "Thanks! I'll look into that." },
+      ]);
+    }, 400);
+  }
+
   const totalMarked = markedStudents.length;
 
   // Countdown effect for OTP expiration
@@ -282,34 +297,69 @@ export default function FacultyDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F6F4FF] text-gray-900">
-      {/* Purple themed header */}
-      <header className="px-4 py-5 bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full overflow-hidden ring-2 ring-white/40">
-            <Image src="/faculty.svg" alt="Faculty" width={40} height={40} priority />
-          </div>
-          <div>
-            <div className="text-sm/4 opacity-90">Hi SANDHIYA,</div>
-            <h1 className="text-lg font-semibold">Here's your dashboard overview</h1>
+    <div className="font-sans min-h-screen p-0 sm:p-8 bg-[radial-gradient(60%_60%_at_50%_0%,rgba(59,130,246,0.15)_0%,transparent_70%)] bg-[length:100%_100%] bg-no-repeat">
+      {/* Mobile header */}
+      <div className="sm:hidden bg-blue-600 text-white px-4 pt-6 pb-5 rounded-b-3xl shadow-sm">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center font-semibold">
+              SANDHIYA
+            </div>
+            <div>
+              <div className="uppercase text-xs/5 opacity-90">Hi</div>
+              <div className="text-2xl font-bold tracking-wide">SANDHIYA</div>
+              <div className="text-sm opacity-90">Here's your dashboard overview</div>
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="flex-1 p-4 pb-24">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-0 pt-4 sm:pt-0 pb-24 sm:pb-0">
+        {/* Header */}
+        <header className="hidden sm:flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">Hi, SANDHIYA</h1>
+            <p className="text-sm/6 text-foreground/70">Faculty • Computer Science Department</p>
+          </div>
+        </header>
+
+        {/* Desktop navigation to switch views */}
+        <nav className="hidden sm:flex items-center gap-2 -mt-2">
+          {([
+            { key: "leaves", label: "Leaves" },
+            { key: "attendance", label: "Attendance" },
+            { key: "timetable", label: "Timetable" },
+            { key: "mentees", label: "Mentees" },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key as TabKey)}
+              className={`h-9 px-3 rounded-full border text-xs font-semibold transition ${
+                activeTab === t.key
+                  ? "bg-violet-600 border-violet-600 text-white"
+                  : "bg-white border-gray-200 text-foreground hover:bg-gray-50"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
         {activeTab === TabKey.Leaves && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Pending Leave Requests</h2>
-            <div className="space-y-3">
+          <section className="rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground">Pending Leave Requests</h2>
+            </div>
+            <div className="p-4 space-y-3">
               {leaves.length === 0 && (
-                <div className="text-sm text-gray-500">No leave requests</div>
+                <div className="text-sm text-foreground/60">No leave requests</div>
               )}
               {leaves.map((leave: LeaveRequest) => {
                 const cardColor =
                   leave.status === "approved"
-                    ? "bg-green-50 border-green-200"
+                    ? "bg-emerald-50 border-emerald-200"
                     : leave.status === "rejected"
-                    ? "bg-red-50 border-red-200"
+                    ? "bg-rose-50 border-rose-200"
                     : "bg-white border-gray-200";
                 return (
                 <div
@@ -317,21 +367,21 @@ export default function FacultyDashboardPage() {
                   className={`border rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${cardColor}`}
                 >
                   <div className="space-y-1">
-                    <div className="font-medium">
-                      {leave.studentName} <span className="text-gray-500">({leave.registrationNumber})</span>
+                    <div className="font-medium text-foreground">
+                      {leave.studentName} <span className="text-foreground/60">({leave.registrationNumber})</span>
                     </div>
-                    <div className="text-sm text-gray-700">
+                    <div className="text-sm text-foreground/70">
                       {leave.type.toUpperCase()} • {leave.date}
                     </div>
-                    <div className="text-sm text-gray-600">{leave.reason}</div>
+                    <div className="text-sm text-foreground/60">{leave.reason}</div>
                     <div className="text-xs">
                       <span
                         className={
                           leave.status === "pending"
                             ? "text-amber-600"
                             : leave.status === "approved"
-                            ? "text-green-600"
-                            : "text-red-600"
+                            ? "text-emerald-600"
+                            : "text-rose-600"
                         }
                       >
                         Status: {leave.status}
@@ -340,7 +390,7 @@ export default function FacultyDashboardPage() {
                   </div>
                   <div className="flex gap-2">
                     <button
-                      className="px-3 py-2 rounded-md text-sm bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 shadow-sm inline-flex items-center gap-2"
+                      className="px-3 py-2 rounded-md text-sm bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50 shadow-sm inline-flex items-center gap-2"
                       onClick={() => handleLeaveAction(leave.id, "approved")}
                       disabled={leave.status !== "pending"}
                       aria-label="Approve leave"
@@ -351,7 +401,7 @@ export default function FacultyDashboardPage() {
                       Approve
                     </button>
                     <button
-                      className="px-3 py-2 rounded-md text-sm bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 shadow-sm inline-flex items-center gap-2"
+                      className="px-3 py-2 rounded-md text-sm bg-rose-600 hover:bg-rose-700 text-white disabled:opacity-50 shadow-sm inline-flex items-center gap-2"
                       onClick={() => handleLeaveAction(leave.id, "rejected")}
                       disabled={leave.status !== "pending"}
                       aria-label="Reject leave"
@@ -369,18 +419,18 @@ export default function FacultyDashboardPage() {
         )}
 
         {activeTab === TabKey.Attendance && (
-          <section className="space-y-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <h2 className="text-lg font-semibold">Generate OTP + QR</h2>
+          <section className="rounded-xl border border-violet-200 bg-white shadow-sm">
+            <div className="p-4 border-b border-violet-200 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-violet-800">Generate OTP + QR</h2>
               <div className="flex gap-2">
                 <button
-                  className="px-3 py-2 rounded-md border text-sm bg-blue-600 text-white"
+                  className="h-10 px-4 rounded-md text-sm font-medium inline-flex items-center gap-2 bg-violet-600 text-white hover:bg-violet-700 transition shadow-sm"
                   onClick={handleGenerateOtpAndQr}
                 >
                   Generate
                 </button>
                 <button
-                  className="px-3 py-2 rounded-md border text-sm"
+                  className="h-10 px-4 rounded-md text-sm font-medium border border-gray-300 text-foreground hover:bg-gray-50"
                   onClick={handleMockMarkAttendance}
                   disabled={!otp}
                   title={!otp ? "Generate session first" : "Simulate a student marking"}
@@ -390,50 +440,50 @@ export default function FacultyDashboardPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border rounded-xl p-4 space-y-2 bg-white">
-                <div className="text-sm text-gray-500">Session</div>
-                <div className="text-sm">{sessionId || "—"}</div>
-                <div className="text-xs text-gray-500">Period: {currentPeriodKey}</div>
-                <div className="text-sm text-gray-500 mt-2">OTP</div>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                <div className="text-xs/5 text-foreground/60">Session</div>
+                <div className="mt-1 text-sm font-medium text-foreground">{sessionId || "—"}</div>
+                <div className="text-xs/5 text-foreground/60 mt-2">Period: {currentPeriodKey}</div>
+                <div className="text-xs/5 text-foreground/60 mt-3">OTP</div>
                 {otp && otpExpiresIn > 0 && (
-                  <div className="text-xs font-bold text-red-600">Expires in {otpExpiresIn}s</div>
+                  <div className="text-xs font-bold text-rose-600">Expires in {otpExpiresIn}s</div>
                 )}
-                <div className="text-2xl font-mono tracking-widest">{otp || "------"}</div>
+                <div className="mt-1 text-2xl font-mono tracking-widest text-foreground">{otp || "------"}</div>
               </div>
 
-              <div className="border rounded-xl p-4 md:col-span-2 bg-white">
-                <div className="text-sm text-gray-500 mb-2">QR Code</div>
-                <div className="h-48 w-48 grid place-items-center text-gray-800">
+              <div className="rounded-lg border border-gray-200 p-4 md:col-span-2 bg-gray-50">
+                <div className="text-xs/5 text-foreground/60 mb-2">QR Code</div>
+                <div className="h-48 w-48 grid place-items-center text-foreground">
                   {isGenerating && (
-                    <span className="text-sm text-gray-500">Generating…</span>
+                    <span className="text-sm text-foreground/60">Generating…</span>
                   )}
                   {!isGenerating && otp && qrValue && (
                     <QRCode size={192} value={qrValue} bgColor="#FFFFFF" fgColor="#111827" level="M" />
                   )}
                   {!isGenerating && (!otp || !qrValue) && (
-                    <span className="text-sm text-gray-500">Generate to view</span>
+                    <span className="text-sm text-foreground/60">Generate to view</span>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="border rounded-xl p-4 bg-white">
+            <div className="p-4 border-t border-gray-200">
               <div className="flex items-center justify-between">
-                <h3 className="font-medium">Marked Students</h3>
-                <div className="text-sm text-gray-600">Total: {totalMarked}</div>
+                <h3 className="text-sm font-semibold text-foreground">Marked Students</h3>
+                <div className="text-sm text-foreground/60">Total: {totalMarked}</div>
               </div>
               <div className="mt-3 space-y-2">
                 {markedStudents.length === 0 && (
-                  <div className="text-sm text-gray-500">No students marked yet</div>
+                  <div className="text-sm text-foreground/60">No students marked yet</div>
                 )}
                 {markedStudents.map((s: MarkedStudent) => (
-                  <div key={s.id} className="flex items-center justify-between text-sm border rounded-md px-3 py-2">
+                  <div key={s.id} className="flex items-center justify-between text-sm border border-gray-200 rounded-md px-3 py-2 bg-white">
                     <div>
-                      <span className="font-medium">{s.name}</span>
-                      <span className="text-gray-500"> ({s.registrationNumber})</span>
+                      <span className="font-medium text-foreground">{s.name}</span>
+                      <span className="text-foreground/60"> ({s.registrationNumber})</span>
                     </div>
-                    <div className="text-gray-500">{s.markedAt}</div>
+                    <div className="text-foreground/60">{s.markedAt}</div>
                   </div>
                 ))}
               </div>
@@ -442,15 +492,17 @@ export default function FacultyDashboardPage() {
         )}
 
         {activeTab === TabKey.Timetable && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Your Timetable</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <section className="rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground">Your Timetable</h2>
+            </div>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {timetable.map((slot) => (
-                <div key={slot.id} className="border rounded-xl p-4 bg-white">
-                  <div className="text-xs text-gray-500">{slot.day}</div>
-                  <div className="font-medium">{slot.subject}</div>
-                  <div className="text-sm text-gray-600">{slot.hour}</div>
-                  <div className="text-sm text-gray-600">Room: {slot.room}</div>
+                <div key={slot.id} className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                  <div className="text-xs/5 text-foreground/60">{slot.day}</div>
+                  <div className="mt-1 font-medium text-foreground">{slot.subject}</div>
+                  <div className="text-sm text-foreground/60">{slot.hour}</div>
+                  <div className="text-sm text-foreground/60">Room: {slot.room}</div>
                 </div>
               ))}
             </div>
@@ -458,22 +510,54 @@ export default function FacultyDashboardPage() {
         )}
 
         {activeTab === TabKey.Mentees && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Your Mentees</h2>
-            <div className="text-sm text-gray-600">Connect this to your backend to fetch mentees from `Faculty.mentees`.</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[1,2,3].map((i) => (
-                <div key={i} className="border rounded-xl p-4 bg-white">
-                  <div className="font-medium">Mentee {i}</div>
-                  <div className="text-sm text-gray-600">Reg: 21CSE0{i}1</div>
-                  <div className="text-sm text-gray-600">Attendance: 92%</div>
-                  <div className="text-sm text-gray-600">GPA: 8.{i}</div>
-                </div>
-              ))}
+          <section className="rounded-xl border border-black/10 bg-white shadow-sm">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-foreground">Your Mentees</h2>
+            </div>
+            <div className="p-4">
+              <div className="text-sm text-foreground/60 mb-4">Connect this to your backend to fetch mentees from `Faculty.mentees`.</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1,2,3].map((i) => (
+                  <div key={i} className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                    <div className="font-medium text-foreground">Mentee {i}</div>
+                    <div className="text-sm text-foreground/60">Reg: 21CSE0{i}1</div>
+                    <div className="text-sm text-foreground/60">Attendance: 92%</div>
+                    <div className="text-sm text-foreground/60">GPA: 8.{i}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
         )}
-      </main>
+      </div>
+
+      {/* Bottom Navigation & FAB (mobile) */}
+      <div className="sm:hidden fixed inset-x-0 bottom-0 bg-white border-t border-gray-200 h-20">
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2">
+          <button
+            onClick={() => setActiveTab(TabKey.Attendance)}
+            className="h-14 w-14 rounded-full bg-violet-600 text-white shadow-lg flex items-center justify-center"
+            title="Attendance"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.8"/>
+              <path d="M8 9h8M8 12h8M8 15h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div className="flex items-center justify-around h-full px-6 text-[22px]">
+          <button className={`${activeTab === TabKey.Leaves ? "text-violet-600" : "text-gray-400"} hover:text-violet-600`} onClick={() => setActiveTab(TabKey.Leaves)} aria-label="Leaves">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.6"/><path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.6"/><path d="M8 14l2.5 2.5L16 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+          <div className="w-10" />
+          <button className={`${activeTab === TabKey.Timetable ? "text-violet-600" : "text-gray-400"} hover:text-violet-600`} onClick={() => setActiveTab(TabKey.Timetable)} aria-label="Timetable">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M8 2v4M16 2v4M3 9h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><rect x="7" y="12" width="4" height="3" rx="0.5" fill="currentColor"/><rect x="13" y="12" width="4" height="3" rx="0.5" fill="currentColor" opacity=".5"/></svg>
+          </button>
+          <button className={`${activeTab === TabKey.Mentees ? "text-violet-600" : "text-gray-400"} hover:text-violet-600`} onClick={() => setActiveTab(TabKey.Mentees)} aria-label="Mentees">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" strokeWidth="1.6"/><path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+          </button>
+        </div>
+      </div>
 
       {/* Floating Chat Button */}
       <button
@@ -548,73 +632,6 @@ export default function FacultyDashboardPage() {
           </aside>
         </div>
       )}
-
-      {/* Bottom Navigation with professional icons and centered FAB */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur border-t border-gray-200">
-        <div className="relative max-w-4xl mx-auto h-16 flex items-center justify-between px-8">
-          {/* Left: Leaves */}
-          <button
-            className={`flex flex-col items-center justify-center text-xs ${
-              activeTab === TabKey.Leaves ? "text-blue-600" : "text-gray-600"
-            }`}
-            onClick={() => setActiveTab(TabKey.Leaves)}
-            aria-label="Leaves"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M8 14l2.5 2.5L16 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span className="mt-1">Leaves</span>
-          </button>
-
-          {/* Center: Floating Attendance action */}
-          <button
-            className={`absolute left-1/2 -translate-x-1/2 -translate-y-6 h-14 w-14 rounded-full shadow-lg grid place-items-center text-white ${
-              activeTab === TabKey.Attendance ? "bg-blue-600" : "bg-blue-600"
-            }`}
-            onClick={() => setActiveTab(TabKey.Attendance)}
-            aria-label="Attendance"
-          >
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" strokeWidth="1.6"/>
-              <path d="M8 9h8M8 12h8M8 15h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-            </svg>
-          </button>
-
-          {/* Right: Timetable */}
-          <button
-            className={`flex flex-col items-center justify-center text-xs ${
-              activeTab === TabKey.Timetable ? "text-blue-600" : "text-gray-600"
-            }`}
-            onClick={() => setActiveTab(TabKey.Timetable)}
-            aria-label="Timetable"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M8 2v4M16 2v4M3 9h18" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              <rect x="7" y="12" width="4" height="3" rx="0.5" fill="currentColor"/>
-              <rect x="13" y="12" width="4" height="3" rx="0.5" fill="currentColor" opacity=".5"/>
-            </svg>
-            <span className="mt-1">Timetable</span>
-          </button>
-
-          {/* Far Right: Mentees */}
-          <button
-            className={`flex flex-col items-center justify-center text-xs ${
-              activeTab === TabKey.Mentees ? "text-blue-600" : "text-gray-600"
-            }`}
-            onClick={() => setActiveTab(TabKey.Mentees)}
-            aria-label="Mentees"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" strokeWidth="1.5"/>
-              <path d="M4 20a8 8 0 0 1 16 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-            <span className="mt-1">Mentees</span>
-          </button>
-        </div>
-      </nav>
     </div>
   );
 }
