@@ -1,27 +1,17 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { ReactNode } from "react";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
-  title: "Smart Attendance System",
-  description: "Manage attendance efficiently with our smart system",
+  title: "Smart Attendance",
+  description: "AI-powered smart attendance and analytics system",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <div className="min-h-screen bg-gray-50">
-          {/* Header can be added here */}
-          <main className="container mx-auto px-4">{children}</main>
-          {/* Footer can be added here */}
-        </div>
+      <body className="min-h-screen bg-gray-100 text-gray-900">
+        {children}
       </body>
     </html>
   );
