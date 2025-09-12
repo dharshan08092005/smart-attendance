@@ -134,29 +134,52 @@ export default function AdminDashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        // Simulate API calls with mock data for demo
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Load analytics data
+        const analyticsResponse = await fetch('/api/admin/analytics');
+        const analyticsData = await analyticsResponse.json();
         
-        setStats({
-          totalStudents: 250,
-          totalFaculty: 45,
-          totalSubjects: 32,
-          averageAttendance: 87.5,
-          pendingLeaves: 12,
-          todaySessions: 18
-        });
+        if (analyticsData.success) {
+          setStats({
+            totalStudents: analyticsData.data.overview.totalStudents,
+            totalFaculty: analyticsData.data.overview.totalFaculty,
+            totalSubjects: 32, // This would need a subjects API
+            averageAttendance: Math.round(analyticsData.data.overview.averageAttendance),
+            pendingLeaves: 12, // This would need a leaves API
+            todaySessions: 18 // This would need a sessions API
+          });
+        }
+
+        // Load students data
+        const studentsResponse = await fetch('/api/admin/students?limit=10');
+        const studentsData = await studentsResponse.json();
         
-        setStudents([
-          { id: '1', name: 'John Doe', registrationNumber: 'ST001', email: 'john@example.com', attendancePercentage: 92, gpa: 3.8 },
-          { id: '2', name: 'Jane Smith', registrationNumber: 'ST002', email: 'jane@example.com', attendancePercentage: 88, gpa: 3.6 },
-          { id: '3', name: 'Mike Johnson', registrationNumber: 'ST003', email: 'mike@example.com', attendancePercentage: 95, gpa: 3.9 }
-        ]);
+        if (studentsData.success) {
+          setStudents(studentsData.data.map((s: any) => ({
+            id: s._id,
+            name: s.name,
+            registrationNumber: s.registrationNumber,
+            email: s.email,
+            attendancePercentage: s.attendancePercentage || 0,
+            gpa: s.GPA || 0
+          })));
+        }
+
+        // Load faculty data
+        const facultyResponse = await fetch('/api/admin/faculty?limit=10');
+        const facultyData = await facultyResponse.json();
         
-        setFaculty([
-          { id: '1', name: 'Dr. Alice Brown', department: 'Computer Science', email: 'alice@university.edu', subjects: 3, assignedStudents: 85 },
-          { id: '2', name: 'Prof. Robert Wilson', department: 'Mathematics', email: 'robert@university.edu', subjects: 2, assignedStudents: 92 }
-        ]);
-        
+        if (facultyData.success) {
+          setFaculty(facultyData.data.map((f: any) => ({
+            id: f._id,
+            name: f.name,
+            department: f.department,
+            email: f.email,
+            subjects: f.subjects?.length || 0,
+            assignedStudents: f.assignedStudentsCount || 0
+          })));
+        }
+
+        // Mock data for subjects, attendance, and leaves (these would need their own APIs)
         setSubjects([
           { id: '1', name: 'Data Structures', code: 'CS201', type: 'core' },
           { id: '2', name: 'Linear Algebra', code: 'MA101', type: 'core' },
@@ -275,19 +298,28 @@ export default function AdminDashboard() {
                 }
                 setOtpLoading(true);
                 
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
                 try {
-                  const now = Date.now();
-                  const mockOtps = otpBulkForm.periods.map(period => ({
-                    date: otpBulkForm.mode === 'single' ? otpBulkForm.date : otpBulkForm.fromDate,
-                    period,
-                    otp: Math.random().toString(36).substring(2, 8).toUpperCase(),
-                    expiresAt: now + 300000, // 5 minutes
-                    remaining: 300,
-                  }));
-                  setOtpBulkResult(mockOtps);
+                  const response = await fetch('/api/admin/otp/generate', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      mode: otpBulkForm.mode,
+                      date: otpBulkForm.date,
+                      fromDate: otpBulkForm.fromDate,
+                      toDate: otpBulkForm.toDate,
+                      periods: otpBulkForm.periods
+                    })
+                  });
+
+                  const data = await response.json();
+                  
+                  if (data.success) {
+                    setOtpBulkResult(data.data);
+                  } else {
+                    setOtpError(data.error || 'Failed to generate OTPs');
+                  }
                 } catch (err: any) {
                   setOtpError(err.message || 'Failed to generate OTPs');
                 } finally {
@@ -404,14 +436,32 @@ export default function AdminDashboard() {
                 }
                 setAttnBulkSubmitting(true);
                 
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
                 try {
-                  const count = otpBulkForm.periods.length * (otpBulkForm.mode === 'single' ? 1 : 5);
-                  setAttnBulkMessage(`Successfully updated ${count} attendance records`);
+                  const response = await fetch('/api/admin/bulk', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      operation: 'updateAttendance',
+                      type: 'student',
+                      data: {
+                        studentIds: [attnBulkForm.studentId],
+                        attendancePercentage: attnBulkForm.status === 'present' ? 100 : 0,
+                        method: attnBulkForm.method
+                      }
+                    })
+                  });
+
+                  const data = await response.json();
+                  
+                  if (data.success) {
+                    setAttnBulkMessage(data.message);
+                  } else {
+                    setAttnBulkMessage(data.error || 'Failed to update attendance');
+                  }
                 } catch (err: any) {
-                  setAttnBulkMessage(err.message || 'Failed to update');
+                  setAttnBulkMessage(err.message || 'Failed to update attendance');
                 } finally {
                   setAttnBulkSubmitting(false);
                 }
