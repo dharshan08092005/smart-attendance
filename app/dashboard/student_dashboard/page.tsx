@@ -276,6 +276,28 @@ export default function StudentDashboardPage() {
           </div>
         </header>
 
+        {/* Desktop navigation to switch views */}
+        <nav className="hidden sm:flex items-center gap-2 -mt-2">
+          {([
+            { key: "home", label: "Home" },
+            { key: "attendance", label: "Attendance" },
+            { key: "leave", label: "Leave" },
+            { key: "notifications", label: "Notifications" },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setActiveView(t.key)}
+              className={`h-9 px-3 rounded-full border text-xs font-semibold transition ${
+                activeView === t.key
+                  ? "bg-violet-600 border-violet-600 text-white"
+                  : "bg-white border-gray-200 text-foreground hover:bg-gray-50"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
         {activeView === "home" && (
           <section className="rounded-xl border border-black/10 bg-white shadow-sm">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
@@ -646,4 +668,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
