@@ -9,11 +9,17 @@ async function seedData() {
     const adminCollection = await getCollection('admin');
     const facultyCollection = await getCollection('faculty');
     const studentCollection = await getCollection('recommendation');
+    const leaveCollection = await getCollection('leaves');
+    const attendanceCollection = await getCollection('attendance');
+    const otpCollection = await getCollection('otps');
 
     // Clear existing data
     await adminCollection.deleteMany({});
     await facultyCollection.deleteMany({});
     await studentCollection.deleteMany({});
+    await leaveCollection.deleteMany({});
+    await attendanceCollection.deleteMany({});
+    await otpCollection.deleteMany({});
 
     // Create sample admin
     const admin = {
