@@ -19,22 +19,49 @@ const Login = () => {
     setError('');
     setLoading(true);
 
-    if (credentials.email && credentials.password) {
-      switch (credentials.userType) {
-        case 'admin':
-          router.push('/dashboard/admin-dashboard');
-          break;
-        case 'faculty':
-          router.push('/dashboard/faculty-dashboard');
-          break;
-        case 'student':
-          router.push('/dashboard/student_dashboard');
-          break;
-      }
-    } else {
+    if (!credentials.email || !credentials.password) {
       setError('Please enter email and password');
+      setLoading(false);
+      return;
     }
-    setLoading(false);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Store token in localStorage
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+
+        // Redirect based on user type
+        switch (credentials.userType) {
+          case 'admin':
+            router.push('/dashboard/admin-dashboard');
+            break;
+          case 'faculty':
+            router.push('/dashboard/faculty-dashboard');
+            break;
+          case 'student':
+            router.push('/dashboard/student_dashboard');
+            break;
+        }
+      } else {
+        setError(data.error || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
