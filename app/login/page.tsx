@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2, Mail, Lock, User } from 'lucide-react';
 
 const Login = () => {
   const router = useRouter();
@@ -19,7 +20,6 @@ const Login = () => {
     setLoading(true);
 
     if (credentials.email && credentials.password) {
-      // 🔐 You can add API call here for real login
       switch (credentials.userType) {
         case 'admin':
           router.push('/dashboard/admin-dashboard');
@@ -38,49 +38,63 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6 text-center">
-          Smart Attendance Login
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-500">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl w-96 transform transition duration-300 hover:scale-[1.02]">
+        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
+          CLASS LENS
         </h1>
-
-        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
+        <p className="text-center text-gray-500 mb-6">
+          Login to continue
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+          {/* Email */}
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
             <input
               type="email"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+              id="email"
+              className="peer pl-10 pr-3 py-3 w-full border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-gray-50"
               value={credentials.email}
               onChange={(e) =>
                 setCredentials({ ...credentials, email: e.target.value })
               }
               required
             />
+            <label
+              htmlFor="email"
+              className="absolute left-10 -top-2.5 text-xs text-indigo-600 bg-gray-50 px-1 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-sm peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-indigo-600"
+            >
+              Email Address
+            </label>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
+          {/* Password */}
+          <div className="relative">
+            <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
             <input
               type="password"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+              id="password"
+              className="peer pl-10 pr-3 py-3 w-full border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-gray-50"
               value={credentials.password}
               onChange={(e) =>
                 setCredentials({ ...credentials, password: e.target.value })
               }
               required
             />
+            <label
+              htmlFor="password"
+              className="absolute left-10 -top-2.5 text-xs text-indigo-600 bg-gray-50 px-1 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-sm peer-focus:-top-2.5 peer-focus:text-xs peer-focus:text-indigo-600"
+            >
+              Password
+            </label>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Login As
-            </label>
+          {/* User type */}
+          <div className="relative">
+            <User className="absolute left-3 top-3 text-gray-400" size={20} />
             <select
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+              id="userType"
+              className="pl-10 pr-3 py-3 w-full border rounded-lg bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
               value={credentials.userType}
               onChange={(e) =>
                 setCredentials({ ...credentials, userType: e.target.value })
@@ -90,20 +104,36 @@ const Login = () => {
               <option value="faculty">Faculty</option>
               <option value="admin">Admin</option>
             </select>
+            <label
+              htmlFor="userType"
+              className="absolute left-10 -top-2.5 text-xs text-indigo-600 bg-gray-50 px-1"
+            >
+              Login As
+            </label>
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && (
+            <p className="text-red-500 text-sm text-center">{error}</p>
+          )}
 
+          {/* Button */}
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-2 px-4 rounded-md transition-colors text-white ${
+            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold transition text-white shadow-md ${
               loading
                 ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600'
+                : 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600'
             }`}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                Logging in...
+              </>
+            ) : (
+              'Login'
+            )}
           </button>
         </form>
       </div>
