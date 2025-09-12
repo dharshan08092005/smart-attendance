@@ -199,6 +199,21 @@ export default function FacultyDashboardPage() {
     });
   }
 
+  function handleSendMessage(): void {
+    const text = chatInput.trim();
+    if (!text) return;
+    const userMsg = { id: `u-${Date.now()}`, role: "user" as const, content: text };
+    setChatMessages((curr) => [...curr, userMsg]);
+    setChatInput("");
+    // Mock assistant response
+    setTimeout(() => {
+      setChatMessages((curr) => [
+        ...curr,
+        { id: `a-${Date.now()}`, role: "assistant", content: "Thanks! I'll look into that." },
+      ]);
+    }, 400);
+  }
+
   const totalMarked = markedStudents.length;
 
   // Countdown effect for OTP expiration
@@ -482,6 +497,80 @@ export default function FacultyDashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* Floating Chat Button */}
+      <button
+        className="fixed bottom-20 right-4 h-12 w-12 rounded-full bg-blue-600 text-white shadow-lg grid place-items-center hover:bg-blue-700"
+        onClick={() => setIsChatOpen(true)}
+        aria-label="Open Chatbot"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 12c0 4.418-4.03 8-9 8-1.06 0-2.07-.16-3-.46L3 20l1.07-3.2C3.4 15.55 3 13.82 3 12 3 7.582 7.03 4 12 4s9 3.582 9 8z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="9" cy="12" r="1" fill="currentColor"/>
+          <circle cx="12" cy="12" r="1" fill="currentColor"/>
+          <circle cx="15" cy="12" r="1" fill="currentColor"/>
+        </svg>
+      </button>
+
+      {/* Chat Slide-over */}
+      {isChatOpen && (
+        <div className="fixed inset-0 z-40">
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setIsChatOpen(false)}
+            aria-hidden="true"
+          />
+          <aside className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl flex flex-col">
+            <div className="px-4 py-3 border-b flex items-center justify-between">
+              <div className="font-medium">Chat Assistant</div>
+              <button
+                className="h-8 w-8 grid place-items-center rounded hover:bg-gray-100"
+                onClick={() => setIsChatOpen(false)}
+                aria-label="Close Chat"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+              {chatMessages.map((m) => (
+                <div key={m.id} className={m.role === "user" ? "text-right" : "text-left"}>
+                  <div
+                    className={
+                      m.role === "user"
+                        ? "inline-block rounded-xl px-3 py-2 bg-blue-600 text-white"
+                        : "inline-block rounded-xl px-3 py-2 bg-gray-100 text-gray-900"
+                    }
+                  >
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-3 border-t">
+              <div className="flex gap-2">
+                <input
+                  className="flex-1 border rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Type your message..."
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSendMessage();
+                  }}
+                />
+                <button
+                  className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50"
+                  onClick={handleSendMessage}
+                  disabled={!chatInput.trim()}
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }
