@@ -134,29 +134,52 @@ export default function AdminDashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        // Simulate API calls with mock data for demo
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Load analytics data
+        const analyticsResponse = await fetch('/api/admin/analytics');
+        const analyticsData = await analyticsResponse.json();
         
-        setStats({
-          totalStudents: 250,
-          totalFaculty: 45,
-          totalSubjects: 32,
-          averageAttendance: 87.5,
-          pendingLeaves: 12,
-          todaySessions: 18
-        });
+        if (analyticsData.success) {
+          setStats({
+            totalStudents: analyticsData.data.overview.totalStudents,
+            totalFaculty: analyticsData.data.overview.totalFaculty,
+            totalSubjects: 32, // This would need a subjects API
+            averageAttendance: Math.round(analyticsData.data.overview.averageAttendance),
+            pendingLeaves: 12, // This would need a leaves API
+            todaySessions: 18 // This would need a sessions API
+          });
+        }
+
+        // Load students data
+        const studentsResponse = await fetch('/api/admin/students?limit=10');
+        const studentsData = await studentsResponse.json();
         
-        setStudents([
-          { id: '1', name: 'John Doe', registrationNumber: 'ST001', email: 'john@example.com', attendancePercentage: 92, gpa: 3.8 },
-          { id: '2', name: 'Jane Smith', registrationNumber: 'ST002', email: 'jane@example.com', attendancePercentage: 88, gpa: 3.6 },
-          { id: '3', name: 'Mike Johnson', registrationNumber: 'ST003', email: 'mike@example.com', attendancePercentage: 95, gpa: 3.9 }
-        ]);
+        if (studentsData.success) {
+          setStudents(studentsData.data.map((s: any) => ({
+            id: s._id,
+            name: s.name,
+            registrationNumber: s.registrationNumber,
+            email: s.email,
+            attendancePercentage: s.attendancePercentage || 0,
+            gpa: s.GPA || 0
+          })));
+        }
+
+        // Load faculty data
+        const facultyResponse = await fetch('/api/admin/faculty?limit=10');
+        const facultyData = await facultyResponse.json();
         
-        setFaculty([
-          { id: '1', name: 'Dr. Alice Brown', department: 'Computer Science', email: 'alice@university.edu', subjects: 3, assignedStudents: 85 },
-          { id: '2', name: 'Prof. Robert Wilson', department: 'Mathematics', email: 'robert@university.edu', subjects: 2, assignedStudents: 92 }
-        ]);
-        
+        if (facultyData.success) {
+          setFaculty(facultyData.data.map((f: any) => ({
+            id: f._id,
+            name: f.name,
+            department: f.department,
+            email: f.email,
+            subjects: f.subjects?.length || 0,
+            assignedStudents: f.assignedStudentsCount || 0
+          })));
+        }
+
+        // Mock data for subjects, attendance, and leaves (these would need their own APIs)
         setSubjects([
           { id: '1', name: 'Data Structures', code: 'CS201', type: 'core' },
           { id: '2', name: 'Linear Algebra', code: 'MA101', type: 'core' },
@@ -272,82 +295,68 @@ export default function AdminDashboard() {
         {/* Quick Actions */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* OTP Generation */}
-          <section className="rounded-xl border border-black/10 bg-white shadow-sm">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-foreground">🔐 Generate OTPs</h2>
-              <span className="text-xs/5 text-foreground/60">Create OTPs for attendance by periods and date range</span>
-            </div>
-            <div className="p-4">
-              <form
-                className="space-y-4"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setOtpError(null);
-                  setOtpBulkResult(null);
-                  if (
-                    (otpBulkForm.mode === 'single' && !otpBulkForm.date) ||
-                    (otpBulkForm.mode === 'range' && (!otpBulkForm.fromDate || !otpBulkForm.toDate)) ||
-                    otpBulkForm.periods.length === 0
-                  ) {
-                    setOtpError('Provide date(s) and at least one period.');
-                    return;
-                  }
-                  setOtpLoading(true);
+          <ModernCard title="🔐 Generate OTPs" subtitle="Create OTPs for attendance by periods and date range">
+            <form
+              className="space-y-6"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setOtpError(null);
+                setOtpBulkResult(null);
+                if (
+                  (otpBulkForm.mode === 'single' && !otpBulkForm.date) ||
+                  (otpBulkForm.mode === 'range' && (!otpBulkForm.fromDate || !otpBulkForm.toDate)) ||
+                  otpBulkForm.periods.length === 0
+                ) {
+                  setOtpError('Provide date(s) and at least one period.');
+                  return;
+                }
+                setOtpLoading(true);
+                
+                try {
+                  const response = await fetch('/api/admin/otp/generate', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      mode: otpBulkForm.mode,
+                      date: otpBulkForm.date,
+                      fromDate: otpBulkForm.fromDate,
+                      toDate: otpBulkForm.toDate,
+                      periods: otpBulkForm.periods
+                    })
+                  });
+
+                  const data = await response.json();
                   
-                  // Simulate API call
-                  await new Promise(resolve => setTimeout(resolve, 1500));
-                  
-                  try {
-                    const now = Date.now();
-                    const mockOtps = otpBulkForm.periods.map(period => ({
-                      date: otpBulkForm.mode === 'single' ? otpBulkForm.date : otpBulkForm.fromDate,
-                      period,
-                      otp: Math.random().toString(36).substring(2, 8).toUpperCase(),
-                      expiresAt: now + 300000, // 5 minutes
-                      remaining: 300,
-                    }));
-                    setOtpBulkResult(mockOtps);
-                  } catch (err: any) {
-                    setOtpError(err.message || 'Failed to generate OTPs');
-                  } finally {
-                    setOtpLoading(false);
+                  if (data.success) {
+                    setOtpBulkResult(data.data);
+                  } else {
+                    setOtpError(data.error || 'Failed to generate OTPs');
                   }
-                }}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-xs/5 text-foreground/60 mb-2">Generation Mode</label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          checked={otpBulkForm.mode === 'single'}
-                          onChange={() => setOtpBulkForm({ ...otpBulkForm, mode: 'single' })}
-                          className="sr-only"
-                        />
-                        <div className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
-                          otpBulkForm.mode === 'single' ? 'border-violet-500 bg-violet-500' : 'border-gray-300'
-                        }`}>
-                          {otpBulkForm.mode === 'single' && <div className="w-1.5 h-1.5 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>}
-                        </div>
-                        <span className="text-sm font-medium text-foreground">Single Date</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          checked={otpBulkForm.mode === 'range'}
-                          onChange={() => setOtpBulkForm({ ...otpBulkForm, mode: 'range' })}
-                          className="sr-only"
-                        />
-                        <div className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
-                          otpBulkForm.mode === 'range' ? 'border-violet-500 bg-violet-500' : 'border-gray-300'
-                        }`}>
-                          {otpBulkForm.mode === 'range' && <div className="w-1.5 h-1.5 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>}
-                        </div>
-                        <span className="text-sm font-medium text-foreground">Date Range</span>
-                      </label>
-                    </div>
+                } catch (err: any) {
+                  setOtpError(err.message || 'Failed to generate OTPs');
+                } finally {
+                  setOtpLoading(false);
+                }
+              }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">Generation Mode</label>
+                  <div className="flex gap-4">
+                    <RadioOption
+                      checked={otpBulkForm.mode === 'single'}
+                      onChange={() => setOtpBulkForm({ ...otpBulkForm, mode: 'single' })}
+                      label="Single Date"
+                    />
+                    <RadioOption
+                      checked={otpBulkForm.mode === 'range'}
+                      onChange={() => setOtpBulkForm({ ...otpBulkForm, mode: 'range' })}
+                      label="Date Range"
+                    />
                   </div>
+                </div>
 
                   {otpBulkForm.mode === 'single' ? (
                     <div className="md:col-span-2">
@@ -454,64 +463,69 @@ export default function AdminDashboard() {
           </section>
 
           {/* Bulk Attendance Update */}
-          <section className="rounded-xl border border-black/10 bg-white shadow-sm">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-foreground">📊 Bulk Attendance Update</h2>
-              <span className="text-xs/5 text-foreground/60">Update attendance for multiple periods and dates</span>
-            </div>
-            <div className="p-4">
-              <form
-                className="space-y-4"
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setAttnBulkMessage(null);
-                  if (!attnBulkForm.studentId || attnBulkForm.periods.length === 0) {
-                    setAttnBulkMessage('Provide student ID and at least one period.');
-                    return;
-                  }
-                  if (
-                    (attnBulkForm.mode === 'single' && !attnBulkForm.date) ||
-                    (attnBulkForm.mode === 'range' && (!attnBulkForm.fromDate || !attnBulkForm.toDate))
-                  ) {
-                    setAttnBulkMessage('Provide valid date or date range.');
-                    return;
-                  }
-                  setAttnBulkSubmitting(true);
+          <ModernCard title="📊 Bulk Attendance Update" subtitle="Update attendance for multiple periods and dates">
+            <form
+              className="space-y-6"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setAttnBulkMessage(null);
+                if (!attnBulkForm.studentId || attnBulkForm.periods.length === 0) {
+                  setAttnBulkMessage('Provide student ID and at least one period.');
+                  return;
+                }
+                if (
+                  (attnBulkForm.mode === 'single' && !attnBulkForm.date) ||
+                  (attnBulkForm.mode === 'range' && (!attnBulkForm.fromDate || !attnBulkForm.toDate))
+                ) {
+                  setAttnBulkMessage('Provide valid date or date range.');
+                  return;
+                }
+                setAttnBulkSubmitting(true);
+                
+                try {
+                  const response = await fetch('/api/admin/bulk', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      operation: 'updateAttendance',
+                      type: 'student',
+                      data: {
+                        studentIds: [attnBulkForm.studentId],
+                        attendancePercentage: attnBulkForm.status === 'present' ? 100 : 0,
+                        method: attnBulkForm.method
+                      }
+                    })
+                  });
+
+                  const data = await response.json();
                   
-                  // Simulate API call
-                  await new Promise(resolve => setTimeout(resolve, 1500));
-                  
-                  try {
-                    const count = otpBulkForm.periods.length * (otpBulkForm.mode === 'single' ? 1 : 5);
-                    setAttnBulkMessage(`Successfully updated ${count} attendance records`);
-                  } catch (err: any) {
-                    setAttnBulkMessage(err.message || 'Failed to update');
-                  } finally {
-                    setAttnBulkSubmitting(false);
+                  if (data.success) {
+                    setAttnBulkMessage(data.message);
+                  } else {
+                    setAttnBulkMessage(data.error || 'Failed to update attendance');
                   }
-                }}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs/5 text-foreground/60 mb-2">Student ID</label>
-                    <input
-                      type="text"
-                      value={attnBulkForm.studentId}
-                      onChange={(e) => setAttnBulkForm({ ...attnBulkForm, studentId: e.target.value })}
-                      placeholder="Enter student ID"
-                      className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs/5 text-foreground/60 mb-2">Subject ID (Optional)</label>
-                    <input
-                      type="text"
-                      value={attnBulkForm.subjectId}
-                      onChange={(e) => setAttnBulkForm({ ...attnBulkForm, subjectId: e.target.value })}
-                      placeholder="Enter subject ID"
-                      className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
-                    />
-                  </div>
+                } catch (err: any) {
+                  setAttnBulkMessage(err.message || 'Failed to update attendance');
+                } finally {
+                  setAttnBulkSubmitting(false);
+                }
+              }}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormInput
+                  label="Student ID"
+                  value={attnBulkForm.studentId}
+                  onChange={(e) => setAttnBulkForm({ ...attnBulkForm, studentId: e.target.value })}
+                  placeholder="Enter student ID"
+                />
+                <FormInput
+                  label="Subject ID (Optional)"
+                  value={attnBulkForm.subjectId}
+                  onChange={(e) => setAttnBulkForm({ ...attnBulkForm, subjectId: e.target.value })}
+                  placeholder="Enter subject ID"
+                />
 
                   <div className="md:col-span-2">
                     <label className="block text-xs/5 text-foreground/60 mb-2">Date Mode</label>

@@ -64,27 +64,10 @@ function getPeriodKey(date: Date): string {
 export default function FacultyDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabKey>(TabKey.Leaves);
 
-  // Mock data – replace with API calls wired to your backend
-  const [leaves, setLeaves] = useState<LeaveRequest[]>([
-    {
-      id: "L1",
-      studentName: "Ananya Sharma",
-      registrationNumber: "21CSE001",
-      date: "2025-09-10",
-      reason: "Fever and cold",
-      type: "medical",
-      status: "pending",
-    },
-    {
-      id: "L2",
-      studentName: "Rahul Verma",
-      registrationNumber: "21CSE045",
-      date: "2025-09-12",
-      reason: "Family function",
-      type: "personal",
-      status: "pending",
-    },
-  ]);
+  // State for real data
+  const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [facultyId, setFacultyId] = useState<string>('');
 
   const [otp, setOtp] = useState<string>("");
   const [sessionId, setSessionId] = useState<string>("");
@@ -100,6 +83,43 @@ export default function FacultyDashboardPage() {
   const [otpExpirationAt, setOtpExpirationAt] = useState<number | null>(null);
   const [currentPeriodKey, setCurrentPeriodKey] = useState<string>(getPeriodKey(new Date()));
 
+  // Load faculty data on component mount
+  useEffect(() => {
+    const loadFacultyData = async () => {
+      try {
+        // Get faculty ID from localStorage or session
+        const user = localStorage.getItem('user');
+        if (user) {
+          const userData = JSON.parse(user);
+          if (userData.userType === 'faculty') {
+            setFacultyId(userData.id);
+            
+            // Load leave requests
+            const leavesResponse = await fetch(`/api/faculty/leaves?facultyId=${userData.id}&status=pending`);
+            const leavesData = await leavesResponse.json();
+            if (leavesData.success) {
+              setLeaves(leavesData.data.map((leave: any) => ({
+                id: leave._id,
+                studentName: leave.studentName,
+                registrationNumber: leave.registrationNumber,
+                date: leave.date,
+                reason: leave.reason,
+                type: leave.type,
+                status: leave.status
+              })));
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading faculty data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFacultyData();
+  }, []);
+
   const timetable: TimetableEntry[] = useMemo(
     () => [
       { id: "TT1", day: "Mon", hour: "09:00-10:00", subject: "DBMS", room: "A-201" },
@@ -112,17 +132,41 @@ export default function FacultyDashboardPage() {
     []
   );
 
-  function handleLeaveAction(id: string, next: "approved" | "rejected"): void {
-    setLeaves((curr: LeaveRequest[]) => curr.map((l: LeaveRequest) => (l.id === id ? { ...l, status: next } : l)));
-    // TODO: Wire to backend: PATCH /leaves/:id { status: next }
+  async function handleLeaveAction(id: string, next: "approved" | "rejected"): Promise<void> {
+    try {
+      const response = await fetch('/api/faculty/leaves', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          leaveId: id,
+          status: next,
+          facultyId: facultyId
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setLeaves((curr: LeaveRequest[]) => curr.map((l: LeaveRequest) => (l.id === id ? { ...l, status: next } : l)));
+      } else {
+        console.error('Error updating leave:', data.error);
+      }
+    } catch (error) {
+      console.error('Error updating leave:', error);
+    }
   }
 
   async function handleGenerateOtpAndQr(): Promise<void> {
-    const newOtp = generateOtp(6);
-    setOtp(newOtp);
-    // Simulated session id; in real app derive from facultyId, subjectId, date, hour
+    if (!facultyId) {
+      console.error('Faculty ID not available');
+      return;
+    }
+
     const sid = `SID-${Date.now()}`;
     setSessionId(sid);
+    
     // Determine if we're still in the same period; if not, reset the list for the new period
     const now = new Date();
     const nextPeriodKey = getPeriodKey(now);
@@ -132,32 +176,38 @@ export default function FacultyDashboardPage() {
       }
       return nextPeriodKey;
     });
-    // Request signed QR payload from server (adds exp, iat, sig)
-    // Indicate generating and fetch signed payload; only show QR after it arrives
+
     setIsGenerating(true);
     setQrValue("");
     setOtpExpirationAt(null);
     setOtpExpiresIn(0);
+    
     try {
-      const res = await fetch("/api/qr/generate", {
+      const res = await fetch("/api/faculty/otp/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // TODO: replace facultyId with real logged-in faculty id from session
-        body: JSON.stringify({ sessionId: sid, otp: newOtp, ttlSeconds: 10, facultyId: "FACULTY-ID" }),
+        body: JSON.stringify({ 
+          sessionId: sid, 
+          facultyId: facultyId,
+          ttlSeconds: 300 // 5 minutes
+        }),
       });
-      if (!res.ok) throw new Error("Failed to generate QR");
+      
+      if (!res.ok) throw new Error("Failed to generate OTP");
+      
       const data = await res.json();
-      if (data?.payload) {
-        setQrValue(JSON.stringify(data.payload));
-        const expMs = (data.payload.exp ?? 0) * 1000;
+      if (data.success && data.data) {
+        setOtp(data.data.otp);
+        setQrValue(JSON.stringify(data.data.payload));
+        const expMs = data.data.expiresAt;
         if (expMs) {
           setOtpExpirationAt(expMs);
           const remainingSec = Math.max(0, Math.ceil((expMs - Date.now()) / 1000));
           setOtpExpiresIn(remainingSec);
         }
       }
-    } catch {
-      // If server fails, keep state without QR to avoid showing a wrong code
+    } catch (error) {
+      console.error('Error generating OTP:', error);
       setQrValue("");
     } finally {
       setIsGenerating(false);
@@ -234,6 +284,17 @@ export default function FacultyDashboardPage() {
     const intervalId = window.setInterval(tick, 250);
     return () => window.clearInterval(intervalId);
   }, [otp, otpExpirationAt]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F6F4FF]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading faculty dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-sans min-h-screen p-0 sm:p-8 bg-[radial-gradient(60%_60%_at_50%_0%,rgba(59,130,246,0.15)_0%,transparent_70%)] bg-[length:100%_100%] bg-no-repeat">
