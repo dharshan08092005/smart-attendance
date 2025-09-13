@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import AIAttendancePredictor from "../../../components/AIAttendancePredictor";
 type ObjectId = string;
 
@@ -108,6 +108,44 @@ export default function StudentDashboardPage() {
   const calendarInputRef = useRef<HTMLInputElement | null>(null);
   const [leaveType, setLeaveType] = useState<string>("leave");
   const [leaves, setLeaves] = useState<Array<{ id: string; fromDate: string; fromTime: string; toDate: string; toTime: string; type: string; reason: string; status: "Pending" | "Mentor Approved" }>>([]);
+  const [attendanceStatus, setAttendanceStatus] = useState<Array<"present" | "absent">>(["present", "present", "absent", "absent", "absent", "absent", "absent"]);
+  const [otpMessage, setOtpMessage] = useState<string>("");
+
+  // Real-time OTP checking
+  useEffect(() => {
+    const checkForOTP = () => {
+      const facultyOtpData = localStorage.getItem('faculty_otp');
+      if (facultyOtpData) {
+        try {
+          const otpData = JSON.parse(facultyOtpData);
+          const currentTime = Date.now();
+          
+          if (currentTime <= otpData.expiresAt) {
+            // OTP is still valid, show notification
+            if (!otpMessage || !otpMessage.includes('OTP available')) {
+              setOtpMessage("🔔 OTP available from faculty! Click 'Scan/OTP' to enter it.");
+            }
+          } else {
+            // OTP expired, clear it
+            localStorage.removeItem('faculty_otp');
+            if (otpMessage && otpMessage.includes('OTP available')) {
+              setOtpMessage("");
+            }
+          }
+        } catch (error) {
+          console.error('Error checking OTP:', error);
+        }
+      }
+    };
+
+    // Check immediately
+    checkForOTP();
+    
+    // Check every 2 seconds
+    const interval = setInterval(checkForOTP, 2000);
+    
+    return () => clearInterval(interval);
+  }, [otpMessage]);
 
   // Mock data shaped to your schemas
   const subjects: Subject[] = [
@@ -160,8 +198,8 @@ export default function StudentDashboardPage() {
   const subjectById = new Map(subjects.map((s) => [s._id, s] as const));
 
   function generateSevenHourAttendance(dateISO: string) {
-    // Fixed attendance pattern: 1st and 2nd hour present, 3rd hour onwards absent
-    return ["present", "present", "absent", "absent", "absent", "absent", "absent"] as Array<"present" | "absent">;
+    // Use the attendance state which can be updated via OTP verification
+    return attendanceStatus;
   }
 
   function getHourTiming(hourIndex: number) {
@@ -175,6 +213,46 @@ export default function StudentDashboardPage() {
     };
     
     return `${formatTime(startHour)} - ${formatTime(endHour)}`;
+  }
+
+  function verifyOTP(enteredOTP: string) {
+    try {
+      const facultyOtpData = localStorage.getItem('faculty_otp');
+      if (!facultyOtpData) {
+        setOtpMessage("❌ No active OTP session found. Ask faculty to generate OTP first.");
+        return false;
+      }
+
+      const otpData = JSON.parse(facultyOtpData);
+      const currentTime = Date.now();
+      
+      // Check if OTP is expired
+      if (currentTime > otpData.expiresAt) {
+        setOtpMessage("❌ OTP has expired. Ask faculty to generate a new OTP.");
+        localStorage.removeItem('faculty_otp');
+        return false;
+      }
+
+      // Check if OTP matches
+      if (enteredOTP === otpData.otp) {
+        // Mark the target hour (3rd hour) as present
+        const newAttendanceStatus = [...attendanceStatus];
+        newAttendanceStatus[otpData.targetHour - 1] = "present"; // targetHour is 1-indexed, array is 0-indexed
+        
+        setAttendanceStatus(newAttendanceStatus);
+        setOtpMessage("✅ OTP verified! Hour 3 attendance marked as present.");
+        
+        // Clear the OTP from localStorage after successful verification
+        localStorage.removeItem('faculty_otp');
+        return true;
+      } else {
+        setOtpMessage("❌ Invalid OTP. Please check the OTP and try again.");
+        return false;
+      }
+    } catch (error) {
+      setOtpMessage("❌ Error verifying OTP. Please try again.");
+      return false;
+    }
   }
 
   function computeHalfDayStatuses(dateISO: string) {
@@ -216,6 +294,32 @@ export default function StudentDashboardPage() {
       </div>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-0 pt-4 sm:pt-0 pb-24 sm:pb-0">
+        {/* OTP Notification Banner */}
+        {otpMessage && otpMessage.includes('OTP available') && (
+          <div className="mx-4 sm:mx-0 -mt-2 sm:mt-0">
+            <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <svg className="h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-blue-800">OTP Available!</div>
+                  <div className="text-xs text-blue-600">Faculty has generated an OTP for attendance</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsOtpOpen(true)}
+                className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700"
+              >
+                Enter OTP
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Mobile "All Caught Up" card (kept subtle) */}
         {activeView === "home" && (
           <div className="sm:hidden -mt-6">
@@ -607,18 +711,47 @@ export default function StudentDashboardPage() {
                 <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-foreground/70 bg-gray-50">
                   Camera preview placeholder. Implement QR/OTP scan here.
                 </div>
+                
+                {/* OTP Message Display */}
+                {otpMessage && (
+                  <div className={`p-3 rounded-lg text-sm ${
+                    otpMessage.includes('✅') 
+                      ? 'bg-green-50 border border-green-200 text-green-700' 
+                      : 'bg-red-50 border border-red-200 text-red-700'
+                  }`}>
+                    {otpMessage}
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-2">
                   <input
                     value={otpValue}
-                    onChange={(e) => setOtpValue(e.target.value)}
-                    placeholder="Enter OTP"
+                    onChange={(e) => {
+                      setOtpValue(e.target.value);
+                      setOtpMessage(""); // Clear message when typing
+                    }}
+                    placeholder="Enter OTP from faculty"
                     className="h-10 flex-1 rounded-md border border-gray-300 px-3 text-sm bg-white placeholder:text-foreground/50"
+                    maxLength={6}
                   />
-                  <button className="h-10 px-4 rounded-md text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm" onClick={() => {/* submit OTP handler */}}>Submit</button>
+                  <button 
+                    className="h-10 px-4 rounded-md text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" 
+                    onClick={() => {
+                      if (otpValue.trim()) {
+                        verifyOTP(otpValue.trim());
+                      }
+                    }}
+                    disabled={!otpValue.trim()}
+                  >
+                    Submit
+                  </button>
                 </div>
                 <div className="flex items-center justify-between text-xs/5 text-foreground/60">
-                  <span>Method: scan via camera or enter manually</span>
-                  <button className="underline" onClick={() => setOtpValue("")}>Clear</button>
+                  <span>Enter the OTP shared by your faculty</span>
+                  <button className="underline" onClick={() => {
+                    setOtpValue("");
+                    setOtpMessage("");
+                  }}>Clear</button>
                 </div>
               </div>
             </div>

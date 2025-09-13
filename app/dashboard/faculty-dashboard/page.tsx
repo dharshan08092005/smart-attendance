@@ -202,7 +202,7 @@ export default function FacultyDashboardPage() {
     try {
       // Create AbortController for timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
       const res = await fetch("/api/faculty/otp/generate", {
         method: "POST",
@@ -227,6 +227,18 @@ export default function FacultyDashboardPage() {
         setOtp(data.data.otp);
         setQrValue(JSON.stringify(data.data.payload));
         const expMs = data.data.expiresAt;
+        
+        // Store OTP in localStorage for cross-dashboard communication
+        const otpData = {
+          otp: data.data.otp,
+          sessionId: sid,
+          facultyId: currentFacultyId,
+          expiresAt: expMs,
+          generatedAt: Date.now(),
+          targetHour: 3 // Target the 3rd hour for attendance
+        };
+        localStorage.setItem('faculty_otp', JSON.stringify(otpData));
+        
         if (expMs) {
           setOtpExpirationAt(expMs);
           const remainingSec = Math.max(0, Math.ceil((expMs - Date.now()) / 1000));
@@ -238,17 +250,62 @@ export default function FacultyDashboardPage() {
             setOtpExpiresIn(newRemaining);
             if (newRemaining === 0) {
               clearInterval(interval);
+              // Clear OTP from localStorage when expired
+              localStorage.removeItem('faculty_otp');
             }
           }, 1000);
         }
-        setSuccess("OTP and QR code generated successfully! Valid for 10 seconds.");
+        setSuccess("OTP and QR code generated successfully! Valid for 10 seconds. Share this OTP with students.");
       } else {
         throw new Error(data.error || "Invalid response from server");
       }
     } catch (error) {
       console.error('Error generating OTP:', error);
-      setError(error instanceof Error ? error.message : "Failed to generate OTP. Please check your connection and try again.");
-      setQrValue("");
+      if (error instanceof Error && error.name === 'AbortError') {
+        // Fallback: Generate OTP locally if API fails
+        console.log('API failed, using fallback OTP generation');
+        const fallbackOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        const fallbackExpMs = Date.now() + (10 * 1000); // 10 seconds
+        
+        setOtp(fallbackOtp);
+        setQrValue(JSON.stringify({
+          v: 1,
+          sessionId: sid,
+          otp: fallbackOtp,
+          exp: Math.floor(fallbackExpMs / 1000),
+          iat: Math.floor(Date.now() / 1000),
+          facultyId: currentFacultyId
+        }));
+        
+        setOtpExpirationAt(fallbackExpMs);
+        setOtpExpiresIn(10);
+        
+        // Store in localStorage for cross-dashboard communication
+        const otpData = {
+          otp: fallbackOtp,
+          sessionId: sid,
+          facultyId: currentFacultyId,
+          expiresAt: fallbackExpMs,
+          generatedAt: Date.now(),
+          targetHour: 3
+        };
+        localStorage.setItem('faculty_otp', JSON.stringify(otpData));
+        
+        // Start countdown timer
+        const interval = setInterval(() => {
+          const newRemaining = Math.max(0, Math.ceil((fallbackExpMs - Date.now()) / 1000));
+          setOtpExpiresIn(newRemaining);
+          if (newRemaining === 0) {
+            clearInterval(interval);
+            localStorage.removeItem('faculty_otp');
+          }
+        }, 1000);
+        
+        setSuccess("OTP generated successfully (offline mode)! Valid for 10 seconds. Share this OTP with students.");
+      } else {
+        setError(error instanceof Error ? error.message : "Failed to generate OTP. Please check your connection and try again.");
+        setQrValue("");
+      }
     } finally {
       setIsGenerating(false);
     }
