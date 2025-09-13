@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// POST - Generate OTP for faculty
+// POST - Generate OTP for faculty (Admin function)
 export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { facultyId, period, subjectId } = body;
 
-    console.log('OTP Generation Request:', { facultyId, period, subjectId });
+    console.log('Admin OTP Generation Request:', { facultyId, period, subjectId });
 
     // Validate required fields
     if (!facultyId || !period) {
@@ -94,14 +94,15 @@ export async function POST(request: NextRequest) {
       data: {
         otp: otp,
         facultyId: facultyId,
+        facultyName: faculty.name,
         period: period,
         expiresIn: 20,
         generatedAt: new Date(now)
       },
-      message: 'OTP generated successfully'
+      message: 'OTP generated successfully for faculty'
     });
   } catch (error) {
-    console.error('Faculty OTP Generation Error:', error);
+    console.error('Admin Faculty OTP Generation Error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to generate OTP' },
       { status: 500 }

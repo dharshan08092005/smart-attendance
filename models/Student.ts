@@ -5,6 +5,7 @@ const StudentSchema = new mongoose.Schema({
   rollNumber: { type: String, required: true, unique: true },
   registrationNumber: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
   facultyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Faculty' },
   otp: { type: String },
   otpGeneratedAt: { type: Date },
@@ -25,6 +26,16 @@ const StudentSchema = new mongoose.Schema({
     trend: { type: String, enum: ['Improving', 'Declining'] },
     confidenceScore: { type: Number },
     timestamp: { type: Date, default: Date.now }
+  }],
+  attendanceRecords: [{
+    date: { type: String, required: true },
+    period: { type: String, required: true },
+    hour: { type: Number, required: true },
+    status: { type: String, enum: ['present', 'absent'], required: true },
+    method: { type: String, enum: ['otp', 'qr', 'manual'], required: true },
+    facultyId: { type: mongoose.Schema.Types.ObjectId, ref: 'Faculty' },
+    subjectId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject' },
+    markedAt: { type: Date, default: Date.now }
   }],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

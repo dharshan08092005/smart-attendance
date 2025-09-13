@@ -1,13 +1,26 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
-const AdminSchema = new mongoose.Schema({
-  id: { type: String, required: true },
+export interface IAdmin extends Document {
+  _id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: 'super_admin' | 'admin';
+  isActive: boolean;
+  lastLogin?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const AdminSchema = new Schema<IAdmin>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, default: 'admin' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  role: { type: String, enum: ['super_admin', 'admin'], default: 'admin' },
+  isActive: { type: Boolean, default: true },
+  lastLogin: { type: Date },
+}, {
+  timestamps: true
 });
 
-export default mongoose.models.Admin || mongoose.model('Admin', AdminSchema);
+export default mongoose.models.Admin || mongoose.model<IAdmin>('Admin', AdminSchema);
