@@ -107,9 +107,32 @@ export default function StudentDashboardPage() {
   const [selectedAttendanceDate, setSelectedAttendanceDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const calendarInputRef = useRef<HTMLInputElement | null>(null);
   const [leaveType, setLeaveType] = useState<string>("leave");
-  const [leaves, setLeaves] = useState<Array<{ id: string; fromDate: string; fromTime: string; toDate: string; toTime: string; type: string; reason: string; status: "Pending" | "Mentor Approved" }>>([]);
+  const [leaves, setLeaves] = useState<Array<{ id: string; fromDate: string; fromTime: string; toDate: string; toTime: string; type: string; reason: string; status: "Pending" | "Mentor Approved" | "Rejected" }>>([]);
   const [attendanceStatus, setAttendanceStatus] = useState<Array<"present" | "absent">>(["present", "present", "absent", "absent", "absent", "absent", "absent"]);
   const [otpMessage, setOtpMessage] = useState<string>("");
+
+  // Load leave status from localStorage
+  const loadLeaveStatus = () => {
+    try {
+      const pendingLeaves = JSON.parse(localStorage.getItem('pending_leaves') || '[]');
+      const studentLeaves = pendingLeaves.filter((leave: any) => 
+        leave.registrationNumber === student.registrationNumber
+      );
+      
+      setLeaves(studentLeaves.map((leave: any) => ({
+        id: leave.id,
+        fromDate: leave.fromDate,
+        fromTime: leave.fromTime,
+        toDate: leave.toDate,
+        toTime: leave.toTime,
+        type: leave.type,
+        reason: leave.reason,
+        status: leave.status === "approved" ? "Mentor Approved" : leave.status === "rejected" ? "Rejected" : "Pending"
+      })));
+    } catch (error) {
+      console.error('Error loading leave status:', error);
+    }
+  };
 
   // Real-time OTP checking
   useEffect(() => {
@@ -146,6 +169,16 @@ export default function StudentDashboardPage() {
     
     return () => clearInterval(interval);
   }, [otpMessage]);
+
+  // Load leave status on component mount and check for updates
+  useEffect(() => {
+    loadLeaveStatus();
+    
+    // Check for leave status updates every 3 seconds
+    const interval = setInterval(loadLeaveStatus, 3000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Mock data shaped to your schemas
   const subjects: Subject[] = [
@@ -553,10 +586,29 @@ export default function StudentDashboardPage() {
                   alert("Invalid time: choose future dates, proper range, and add reason.");
                   return;
                 }
-                setLeaves((prev) => [
-                  { id: String(Date.now()), fromDate, fromTime, toDate, toTime, type: leaveTypeValue, reason, status: "Pending" },
-                  ...prev,
-                ]);
+                const newLeave = { 
+                  id: String(Date.now()), 
+                  fromDate, 
+                  fromTime, 
+                  toDate, 
+                  toTime, 
+                  type: leaveTypeValue, 
+                  reason, 
+                  status: "Pending" as const,
+                  studentName: student.name,
+                  registrationNumber: student.registrationNumber,
+                  appliedAt: new Date().toISOString(),
+                  facultyId: faculty._id
+                };
+                
+                setLeaves((prev) => [newLeave, ...prev]);
+                
+                // Store leave application in localStorage for faculty dashboard
+                const existingLeaves = JSON.parse(localStorage.getItem('pending_leaves') || '[]');
+                existingLeaves.push(newLeave);
+                localStorage.setItem('pending_leaves', JSON.stringify(existingLeaves));
+                
+                alert("Leave application submitted successfully! Your faculty will be notified.");
                 (e.currentTarget as HTMLFormElement).reset();
               }}
             >
@@ -619,7 +671,13 @@ export default function StudentDashboardPage() {
                       <div className="text-xs/5 text-foreground/60">{lv.fromDate} {lv.fromTime} → {lv.toDate} {lv.toTime}</div>
                       <div className="text-xs/5 text-foreground/60">Reason: {lv.reason}</div>
                     </div>
-                    <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] font-semibold ${lv.status === "Pending" ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}>
+                    <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                      lv.status === "Pending" 
+                        ? "bg-amber-50 text-amber-700" 
+                        : lv.status === "Mentor Approved"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-red-50 text-red-700"
+                    }`}>
                       {lv.status}
                     </span>
                   </div>

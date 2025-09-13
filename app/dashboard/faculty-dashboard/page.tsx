@@ -84,6 +84,35 @@ export default function FacultyDashboardPage() {
   const [currentPeriodKey, setCurrentPeriodKey] = useState<string>(getPeriodKey(new Date()));
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
+  const [newLeaveCount, setNewLeaveCount] = useState<number>(0);
+
+  // Load leave applications from localStorage
+  const loadLeaveApplications = () => {
+    try {
+      const pendingLeaves = JSON.parse(localStorage.getItem('pending_leaves') || '[]');
+      const currentFacultyId = facultyId || "507f1f77bcf86cd799439011"; // Use demo faculty ID if not available
+      
+      // Filter leaves for current faculty
+      const facultyLeaves = pendingLeaves.filter((leave: any) => 
+        leave.facultyId === currentFacultyId && leave.status === "Pending"
+      );
+      
+      setLeaves(facultyLeaves.map((leave: any) => ({
+        id: leave.id,
+        studentName: leave.studentName,
+        registrationNumber: leave.registrationNumber,
+        date: leave.fromDate,
+        reason: leave.reason,
+        type: leave.type,
+        status: leave.status
+      })));
+      
+      // Update new leave count
+      setNewLeaveCount(facultyLeaves.length);
+    } catch (error) {
+      console.error('Error loading leave applications:', error);
+    }
+  };
 
   // Load faculty data on component mount
   useEffect(() => {
@@ -96,21 +125,32 @@ export default function FacultyDashboardPage() {
           if (userData.userType === 'faculty') {
             setFacultyId(userData.id);
             
-            // Load leave requests
-            const leavesResponse = await fetch(`/api/faculty/leaves?facultyId=${userData.id}&status=pending`);
-            const leavesData = await leavesResponse.json();
-            if (leavesData.success) {
-              setLeaves(leavesData.data.map((leave: any) => ({
-                id: leave._id,
-                studentName: leave.studentName,
-                registrationNumber: leave.registrationNumber,
-                date: leave.date,
-                reason: leave.reason,
-                type: leave.type,
-                status: leave.status
-              })));
+            // Load leave requests from localStorage first
+            loadLeaveApplications();
+            
+            // Also try to load from API (fallback)
+            try {
+              const leavesResponse = await fetch(`/api/faculty/leaves?facultyId=${userData.id}&status=pending`);
+              const leavesData = await leavesResponse.json();
+              if (leavesData.success && leavesData.data.length > 0) {
+                setLeaves(leavesData.data.map((leave: any) => ({
+                  id: leave._id,
+                  studentName: leave.studentName,
+                  registrationNumber: leave.registrationNumber,
+                  date: leave.date,
+                  reason: leave.reason,
+                  type: leave.type,
+                  status: leave.status
+                })));
+              }
+            } catch (apiError) {
+              console.log('API not available, using localStorage data');
             }
           }
+        } else {
+          // Demo mode - use demo faculty ID
+          setFacultyId("507f1f77bcf86cd799439011");
+          loadLeaveApplications();
         }
       } catch (error) {
         console.error('Error loading faculty data:', error);
@@ -120,7 +160,22 @@ export default function FacultyDashboardPage() {
     };
 
     loadFacultyData();
-  }, []);
+  }, [facultyId]);
+
+  // Real-time leave checking
+  useEffect(() => {
+    const checkForNewLeaves = () => {
+      loadLeaveApplications();
+    };
+
+    // Check immediately
+    checkForNewLeaves();
+    
+    // Check every 3 seconds for new leave applications
+    const interval = setInterval(checkForNewLeaves, 3000);
+    
+    return () => clearInterval(interval);
+  }, [facultyId]);
 
   const timetable: TimetableEntry[] = useMemo(
     () => [
@@ -136,27 +191,46 @@ export default function FacultyDashboardPage() {
 
   async function handleLeaveAction(id: string, next: "approved" | "rejected"): Promise<void> {
     try {
-      const response = await fetch('/api/faculty/leaves', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          leaveId: id,
-          status: next,
-          facultyId: facultyId
-        })
-      });
-
-      const data = await response.json();
+      // Update localStorage first
+      const pendingLeaves = JSON.parse(localStorage.getItem('pending_leaves') || '[]');
+      const updatedLeaves = pendingLeaves.map((leave: any) => 
+        leave.id === id ? { ...leave, status: next, processedAt: new Date().toISOString() } : leave
+      );
+      localStorage.setItem('pending_leaves', JSON.stringify(updatedLeaves));
       
-      if (data.success) {
-        setLeaves((curr: LeaveRequest[]) => curr.map((l: LeaveRequest) => (l.id === id ? { ...l, status: next } : l)));
-      } else {
-        console.error('Error updating leave:', data.error);
+      // Update local state
+      setLeaves((curr: LeaveRequest[]) => curr.map((l: LeaveRequest) => (l.id === id ? { ...l, status: next } : l)));
+      
+      // Try to update via API (fallback)
+      try {
+        const response = await fetch('/api/faculty/leaves', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            leaveId: id,
+            status: next,
+            facultyId: facultyId
+          })
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+          console.error('API Error updating leave:', data.error);
+        }
+      } catch (apiError) {
+        console.log('API not available, using localStorage only');
       }
+      
+      // Show success message
+      setSuccess(`Leave ${next} successfully!`);
+      setTimeout(() => setSuccess(""), 3000);
+      
     } catch (error) {
       console.error('Error updating leave:', error);
+      setError('Failed to update leave status. Please try again.');
+      setTimeout(() => setError(""), 3000);
     }
   }
 
@@ -397,6 +471,34 @@ export default function FacultyDashboardPage() {
       </div>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-0 pt-4 sm:pt-0 pb-24 sm:pb-0">
+        {/* New Leave Applications Notification */}
+        {newLeaveCount > 0 && (
+          <div className="mx-4 sm:mx-0 -mt-2 sm:mt-0">
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                  <svg className="h-4 w-4 text-amber-600" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M21 12c0 4.418-4.03 8-9 8-1.06 0-2.07-.16-3-.46L3 20l1.07-3.2C3.4 15.55 3 13.82 3 12 3 7.582 7.03 4 12 4s9 3.582 9 8z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-amber-800">
+                    {newLeaveCount} New Leave Application{newLeaveCount > 1 ? 's' : ''}
+                  </div>
+                  <div className="text-xs text-amber-600">Student{newLeaveCount > 1 ? 's have' : ' has'} applied for leave</div>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab(TabKey.Leaves)}
+                className="px-3 py-1.5 rounded-md bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700"
+              >
+                Review
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <header className="hidden sm:flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
