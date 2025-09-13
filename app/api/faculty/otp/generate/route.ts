@@ -23,19 +23,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const facultyCollection = await getCollection('faculty');
-    const otpCollection = await getCollection('otps');
-    
-    // Verify faculty exists
-    const faculty = await facultyCollection.findOne({ 
-      _id: new ObjectId(facultyId) 
-    });
+    // For demo mode, skip database operations to make it faster
+    let faculty = null;
+    if (facultyId !== "507f1f77bcf86cd799439011") {
+      const facultyCollection = await getCollection('faculty');
+      faculty = await facultyCollection.findOne({ 
+        _id: new ObjectId(facultyId) 
+      });
 
-    if (!faculty) {
-      return NextResponse.json(
-        { error: 'Faculty not found' },
-        { status: 404 }
-      );
+      if (!faculty) {
+        return NextResponse.json(
+          { error: 'Faculty not found' },
+          { status: 404 }
+        );
+      }
+    } else {
+      // Demo mode - create a mock faculty object (no DB operations)
+      faculty = {
+        _id: new ObjectId(facultyId),
+        name: "Demo Faculty",
+        email: "demo@example.com",
+        department: "Computer Science"
+      };
     }
 
     // Generate OTP
@@ -43,19 +52,21 @@ export async function POST(request: NextRequest) {
     const now = Date.now();
     const expiresAt = now + (ttlSeconds * 1000);
 
-    // Create OTP record
-    const otpData = {
-      otp,
-      sessionId,
-      facultyId: new ObjectId(facultyId),
-      expiresAt,
-      createdAt: now,
-      used: false,
-      usedBy: null,
-      usedAt: null
-    };
-
-    await otpCollection.insertOne(otpData);
+    // Create OTP record (skip DB storage for demo mode to make it faster)
+    if (facultyId !== "507f1f77bcf86cd799439011") {
+      const otpCollection = await getCollection('otps');
+      const otpData = {
+        otp,
+        sessionId,
+        facultyId: new ObjectId(facultyId),
+        expiresAt,
+        createdAt: now,
+        used: false,
+        usedBy: null,
+        usedAt: null
+      };
+      await otpCollection.insertOne(otpData);
+    }
 
     // Create signed QR payload
     const payload = {

@@ -82,6 +82,8 @@ export default function FacultyDashboardPage() {
   const [otpExpiresIn, setOtpExpiresIn] = useState<number>(0); // seconds remaining
   const [otpExpirationAt, setOtpExpirationAt] = useState<number | null>(null);
   const [currentPeriodKey, setCurrentPeriodKey] = useState<string>(getPeriodKey(new Date()));
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
 
   // Load faculty data on component mount
   useEffect(() => {
@@ -159,8 +161,16 @@ export default function FacultyDashboardPage() {
   }
 
   async function handleGenerateOtpAndQr(): Promise<void> {
-    if (!facultyId) {
-      console.error('Faculty ID not available');
+    // Clear previous messages
+    setError("");
+    setSuccess("");
+    
+    // Use demo faculty ID if no real faculty ID is available
+    // Generate a valid ObjectId for demo purposes
+    const currentFacultyId = facultyId || "507f1f77bcf86cd799439011"; // Valid ObjectId format
+    
+    if (!currentFacultyId) {
+      setError("Faculty ID not available. Please log in again.");
       return;
     }
 
@@ -182,18 +192,35 @@ export default function FacultyDashboardPage() {
     setOtpExpirationAt(null);
     setOtpExpiresIn(0);
     
+    // Show immediate feedback
+    setTimeout(() => {
+      if (isGenerating) {
+        setSuccess("Generating OTP and QR code...");
+      }
+    }, 100);
+    
     try {
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const res = await fetch("/api/faculty/otp/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           sessionId: sid, 
-          facultyId: facultyId,
-          ttlSeconds: 300 // 5 minutes
+          facultyId: currentFacultyId,
+          ttlSeconds: 10 // 10 seconds
         }),
+        signal: controller.signal
       });
       
-      if (!res.ok) throw new Error("Failed to generate OTP");
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${res.status}: Failed to generate OTP`);
+      }
       
       const data = await res.json();
       if (data.success && data.data) {
@@ -204,10 +231,23 @@ export default function FacultyDashboardPage() {
           setOtpExpirationAt(expMs);
           const remainingSec = Math.max(0, Math.ceil((expMs - Date.now()) / 1000));
           setOtpExpiresIn(remainingSec);
+          
+          // Start countdown timer
+          const interval = setInterval(() => {
+            const newRemaining = Math.max(0, Math.ceil((expMs - Date.now()) / 1000));
+            setOtpExpiresIn(newRemaining);
+            if (newRemaining === 0) {
+              clearInterval(interval);
+            }
+          }, 1000);
         }
+        setSuccess("OTP and QR code generated successfully! Valid for 10 seconds.");
+      } else {
+        throw new Error(data.error || "Invalid response from server");
       }
     } catch (error) {
       console.error('Error generating OTP:', error);
+      setError(error instanceof Error ? error.message : "Failed to generate OTP. Please check your connection and try again.");
       setQrValue("");
     } finally {
       setIsGenerating(false);
@@ -247,21 +287,6 @@ export default function FacultyDashboardPage() {
         { id: `${reg}-${Date.now()}`, name, registrationNumber: reg, markedAt: formatTime(new Date()) },
       ];
     });
-  }
-
-  function handleSendMessage(): void {
-    const text = chatInput.trim();
-    if (!text) return;
-    const userMsg = { id: `u-${Date.now()}`, role: "user" as const, content: text };
-    setChatMessages((curr) => [...curr, userMsg]);
-    setChatInput("");
-    // Mock assistant response
-    setTimeout(() => {
-      setChatMessages((curr) => [
-        ...curr,
-        { id: `a-${Date.now()}`, role: "assistant", content: "Thanks! I'll look into that." },
-      ]);
-    }, 400);
   }
 
   const totalMarked = markedStudents.length;
@@ -421,67 +446,218 @@ export default function FacultyDashboardPage() {
         {activeTab === TabKey.Attendance && (
           <section className="rounded-xl border border-violet-200 bg-white shadow-sm">
             <div className="p-4 border-b border-violet-200 flex items-center justify-between">
-              <h2 className="text-base font-semibold text-violet-800">Generate OTP + QR</h2>
+              <div>
+                <h2 className="text-base font-semibold text-violet-800">Attendance Session</h2>
+                <p className="text-xs text-violet-600 mt-1">Generate OTP and QR code for student attendance</p>
+              </div>
               <div className="flex gap-2">
                 <button
-                  className="h-10 px-4 rounded-md text-sm font-medium inline-flex items-center gap-2 bg-violet-600 text-white hover:bg-violet-700 transition shadow-sm"
+                  className="h-10 px-4 rounded-md text-sm font-medium inline-flex items-center gap-2 bg-violet-600 text-white hover:bg-violet-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleGenerateOtpAndQr}
+                  disabled={isGenerating}
                 >
-                  Generate
+                  {isGenerating ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 4h4M16 4h4M4 20h4M16 20h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                        <rect x="8" y="8" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                      </svg>
+                      Generate OTP & QR
+                    </>
+                  )}
                 </button>
                 <button
-                  className="h-10 px-4 rounded-md text-sm font-medium border border-gray-300 text-foreground hover:bg-gray-50"
+                  className="h-10 px-4 rounded-md text-sm font-medium border border-gray-300 text-foreground hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleMockMarkAttendance}
                   disabled={!otp}
-                  title={!otp ? "Generate session first" : "Simulate a student marking"}
+                  title={!otp ? "Generate session first" : "Simulate a student marking attendance"}
                 >
-                  Mock Mark Attendance
+                  Test Attendance
                 </button>
               </div>
             </div>
 
-            <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
-                <div className="text-xs/5 text-foreground/60">Session</div>
-                <div className="mt-1 text-sm font-medium text-foreground">{sessionId || "—"}</div>
-                <div className="text-xs/5 text-foreground/60 mt-2">Period: {currentPeriodKey}</div>
-                <div className="text-xs/5 text-foreground/60 mt-3">OTP</div>
-                {otp && otpExpiresIn > 0 && (
-                  <div className="text-xs font-bold text-rose-600">Expires in {otpExpiresIn}s</div>
+            {/* Status Messages */}
+            {(error || success) && (
+              <div className="p-4 border-b border-gray-200">
+                {error && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 border border-red-200">
+                    <svg className="h-5 w-5 text-red-600" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                      <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    <span className="text-sm text-red-700">{error}</span>
+                  </div>
                 )}
-                <div className="mt-1 text-2xl font-mono tracking-widest text-foreground">{otp || "------"}</div>
+                {success && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
+                    <svg className="h-5 w-5 text-green-600" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                      <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span className="text-sm text-green-700">{success}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Session Info */}
+              <div className="space-y-4">
+                <div className="rounded-lg border border-gray-200 p-4 bg-gradient-to-br from-violet-50 to-purple-50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="h-5 w-5 text-violet-600" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
+                      <path d="M3 9h18M8 4v16" stroke="currentColor" strokeWidth="2"/>
+                    </svg>
+                    <h3 className="text-sm font-semibold text-violet-800">Session Details</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <div className="text-xs text-violet-600 font-medium">Session ID</div>
+                      <div className="text-sm font-mono text-violet-800">{sessionId || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-violet-600 font-medium">Current Period</div>
+                      <div className="text-sm text-violet-800">{currentPeriodKey}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-violet-600 font-medium">Faculty ID</div>
+                      <div className="text-sm font-mono text-violet-800">{facultyId || "Demo Mode"}</div>
+                      {!facultyId && (
+                        <div className="text-xs text-amber-600 mt-1">⚠️ Using demo faculty for testing</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* OTP Display */}
+                <div className="rounded-lg border border-gray-200 p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" strokeWidth="2"/>
+                      <circle cx="12" cy="16" r="1" fill="currentColor"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" strokeWidth="2"/>
+                    </svg>
+                    <h3 className="text-sm font-semibold text-emerald-800">One-Time Password</h3>
+                  </div>
+                  <div className="text-center">
+                    {otp && otpExpiresIn > 0 && (
+                      <div className="text-xs font-bold text-red-600 mb-2">
+                        ⏰ Expires in {otpExpiresIn}s
+                      </div>
+                    )}
+                    <div className="text-3xl font-mono tracking-widest text-emerald-800 bg-white rounded-lg p-3 border-2 border-emerald-200">
+                      {otp || "------"}
+                    </div>
+                    <div className="text-xs text-emerald-600 mt-2">
+                      Share this code with students
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="rounded-lg border border-gray-200 p-4 md:col-span-2 bg-gray-50">
-                <div className="text-xs/5 text-foreground/60 mb-2">QR Code</div>
-                <div className="h-48 w-48 grid place-items-center text-foreground">
-                  {isGenerating && (
-                    <span className="text-sm text-foreground/60">Generating…</span>
-                  )}
-                  {!isGenerating && otp && qrValue && (
-                    <QRCode size={192} value={qrValue} bgColor="#FFFFFF" fgColor="#111827" level="M" />
-                  )}
-                  {!isGenerating && (!otp || !qrValue) && (
-                    <span className="text-sm text-foreground/60">Generate to view</span>
-                  )}
+              {/* QR Code */}
+              <div className="lg:col-span-2">
+                <div className="rounded-lg border border-gray-200 p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                  <div className="flex items-center gap-2 mb-4">
+                    <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none">
+                      <path d="M4 4h4M16 4h4M4 20h4M16 20h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      <rect x="8" y="8" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="2"/>
+                    </svg>
+                    <h3 className="text-sm font-semibold text-blue-800">QR Code</h3>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
+                      {isGenerating && (
+                        <div className="h-48 w-48 flex items-center justify-center">
+                          <div className="text-center">
+                            <svg className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-2" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                            </svg>
+                            <span className="text-sm text-blue-600">Generating QR Code...</span>
+                          </div>
+                        </div>
+                      )}
+                      {!isGenerating && otp && qrValue && (
+                        <QRCode 
+                          size={192} 
+                          value={qrValue} 
+                          bgColor="#FFFFFF" 
+                          fgColor="#111827" 
+                          level="M"
+                          style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                        />
+                      )}
+                      {!isGenerating && (!otp || !qrValue) && (
+                        <div className="h-48 w-48 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg">
+                          <div className="text-center">
+                            <svg className="h-12 w-12 text-gray-400 mx-auto mb-2" viewBox="0 0 24 24" fill="none">
+                              <path d="M4 4h4M16 4h4M4 20h4M16 20h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                              <rect x="8" y="8" width="8" height="8" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                            </svg>
+                            <span className="text-sm text-gray-500">Click Generate to create QR Code</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-center mt-3">
+                    <p className="text-xs text-blue-600">
+                      Students can scan this QR code or enter the OTP manually
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* Marked Students */}
             <div className="p-4 border-t border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-foreground">Marked Students</h3>
-                <div className="text-sm text-foreground/60">Total: {totalMarked}</div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <svg className="h-5 w-5 text-gray-600" viewBox="0 0 24 24" fill="none">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2"/>
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                  <h3 className="text-sm font-semibold text-foreground">Attendance Records</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-foreground/60">Total:</span>
+                  <span className="text-sm font-semibold text-violet-600">{totalMarked}</span>
+                </div>
               </div>
-              <div className="mt-3 space-y-2">
+              <div className="space-y-2">
                 {markedStudents.length === 0 && (
-                  <div className="text-sm text-foreground/60">No students marked yet</div>
+                  <div className="text-center py-8 text-sm text-foreground/60 bg-gray-50 rounded-lg border border-gray-200">
+                    <svg className="h-8 w-8 text-gray-400 mx-auto mb-2" viewBox="0 0 24 24" fill="none">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2"/>
+                      <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
+                    </svg>
+                    No students marked yet
+                  </div>
                 )}
                 {markedStudents.map((s: MarkedStudent) => (
-                  <div key={s.id} className="flex items-center justify-between text-sm border border-gray-200 rounded-md px-3 py-2 bg-white">
-                    <div>
-                      <span className="font-medium text-foreground">{s.name}</span>
-                      <span className="text-foreground/60"> ({s.registrationNumber})</span>
+                  <div key={s.id} className="flex items-center justify-between text-sm border border-gray-200 rounded-lg px-4 py-3 bg-white hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                        <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none">
+                          <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <span className="font-medium text-foreground">{s.name}</span>
+                        <span className="text-foreground/60 ml-2">({s.registrationNumber})</span>
+                      </div>
                     </div>
                     <div className="text-foreground/60">{s.markedAt}</div>
                   </div>

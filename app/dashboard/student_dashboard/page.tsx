@@ -160,9 +160,21 @@ export default function StudentDashboardPage() {
   const subjectById = new Map(subjects.map((s) => [s._id, s] as const));
 
   function generateSevenHourAttendance(dateISO: string) {
-    // Mock: alternate present/absent based on date
-    const seed = new Date(dateISO).getDate();
-    return Array.from({ length: 7 }).map((_, idx) => (seed + idx) % 3 === 0 ? "absent" : "present") as Array<"present" | "absent">;
+    // Fixed attendance pattern: 1st and 2nd hour present, 3rd hour onwards absent
+    return ["present", "present", "absent", "absent", "absent", "absent", "absent"] as Array<"present" | "absent">;
+  }
+
+  function getHourTiming(hourIndex: number) {
+    const startHour = 8 + hourIndex; // Starting from 8:30 AM
+    const endHour = startHour + 1;
+    
+    const formatTime = (hour: number) => {
+      const displayHour = hour > 12 ? hour - 12 : hour;
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      return `${displayHour}:30 ${ampm}`;
+    };
+    
+    return `${formatTime(startHour)} - ${formatTime(endHour)}`;
   }
 
   function computeHalfDayStatuses(dateISO: string) {
@@ -398,9 +410,10 @@ export default function StudentDashboardPage() {
               {generateSevenHourAttendance(selectedAttendanceDate).map((status, idx) => (
                 <div key={idx} className={`rounded-xl border p-3 ${status === "present" ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}>
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex-1">
                       <div className="text-sm font-semibold">Hour {idx + 1}</div>
-                      <div className="text-xs/5 text-foreground/60">{new Date(selectedAttendanceDate).toLocaleDateString()}</div>
+                      <div className="text-xs text-foreground/70 font-medium mt-1">{getHourTiming(idx)}</div>
+                      <div className="text-xs/5 text-foreground/60 mt-1">{new Date(selectedAttendanceDate).toLocaleDateString()}</div>
                     </div>
                     <span className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[11px] font-semibold ${status === "present" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${status === "present" ? "bg-emerald-600" : "bg-rose-600"}`} />
