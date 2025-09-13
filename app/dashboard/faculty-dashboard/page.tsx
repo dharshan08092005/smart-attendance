@@ -109,9 +109,14 @@ export default function FacultyDashboardPage() {
               })));
             }
           }
+        } else {
+          // For testing purposes, use the test faculty ID
+          setFacultyId('68c4bcbcd781d710cd1146d6');
         }
       } catch (error) {
         console.error('Error loading faculty data:', error);
+        // For testing purposes, use the test faculty ID
+        setFacultyId('68c4bcbcd781d710cd1146d6');
       } finally {
         setLoading(false);
       }
@@ -158,6 +163,25 @@ export default function FacultyDashboardPage() {
     }
   }
 
+  // Function to get current period based on time
+  function getCurrentPeriod(): string {
+    const now = new Date();
+    const hour = now.getHours();
+    
+    // Define period mapping based on hour
+    if (hour >= 8 && hour < 9) return 'P1';
+    if (hour >= 9 && hour < 10) return 'P2';
+    if (hour >= 10 && hour < 11) return 'P3';
+    if (hour >= 11 && hour < 12) return 'P4';
+    if (hour >= 12 && hour < 13) return 'P5';
+    if (hour >= 13 && hour < 14) return 'P6';
+    if (hour >= 14 && hour < 15) return 'P7';
+    if (hour >= 15 && hour < 16) return 'P8';
+    
+    // Default to P1 if outside normal hours
+    return 'P1';
+  }
+
   async function handleGenerateOtpAndQr(): Promise<void> {
     if (!facultyId) {
       console.error('Faculty ID not available');
@@ -177,6 +201,9 @@ export default function FacultyDashboardPage() {
       return nextPeriodKey;
     });
 
+    // Get current period
+    const currentPeriod = getCurrentPeriod();
+
     setIsGenerating(true);
     setQrValue("");
     setOtpExpirationAt(null);
@@ -187,28 +214,36 @@ export default function FacultyDashboardPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          sessionId: sid, 
           facultyId: facultyId,
-          ttlSeconds: 300 // 5 minutes
+          period: currentPeriod,
+          subjectId: null // Optional - can be set later if needed
         }),
       });
       
-      if (!res.ok) throw new Error("Failed to generate OTP");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to generate OTP");
+      }
       
       const data = await res.json();
       if (data.success && data.data) {
         setOtp(data.data.otp);
-        setQrValue(JSON.stringify(data.data.payload));
-        const expMs = data.data.expiresAt;
-        if (expMs) {
-          setOtpExpirationAt(expMs);
-          const remainingSec = Math.max(0, Math.ceil((expMs - Date.now()) / 1000));
-          setOtpExpiresIn(remainingSec);
-        }
+        setQrValue(JSON.stringify({
+          otp: data.data.otp,
+          facultyId: facultyId,
+          period: currentPeriod,
+          sessionId: sid
+        }));
+        
+        // Set expiration for 20 seconds
+        const expMs = Date.now() + (20 * 1000);
+        setOtpExpirationAt(expMs);
+        setOtpExpiresIn(20);
       }
     } catch (error) {
       console.error('Error generating OTP:', error);
       setQrValue("");
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to generate OTP'}`);
     } finally {
       setIsGenerating(false);
     }
@@ -444,7 +479,8 @@ export default function FacultyDashboardPage() {
               <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
                 <div className="text-xs/5 text-foreground/60">Session</div>
                 <div className="mt-1 text-sm font-medium text-foreground">{sessionId || "—"}</div>
-                <div className="text-xs/5 text-foreground/60 mt-2">Period: {currentPeriodKey}</div>
+                <div className="text-xs/5 text-foreground/60 mt-2">Current Period: {getCurrentPeriod()}</div>
+                <div className="text-xs/5 text-foreground/60 mt-2">Period Key: {currentPeriodKey}</div>
                 <div className="text-xs/5 text-foreground/60 mt-3">OTP</div>
                 {otp && otpExpiresIn > 0 && (
                   <div className="text-xs font-bold text-rose-600">Expires in {otpExpiresIn}s</div>

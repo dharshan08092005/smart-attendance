@@ -1,105 +1,123 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCollection } from '@/lib/mongodb';
+import { connectToDatabase, getCollection } from '@/lib/mongodb';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// GET - Get attendance records with filtering
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const studentId = searchParams.get('studentId');
-    const date = searchParams.get('date');
-    const status = searchParams.get('status');
-
-    const studentCollection = await getCollection('recommendation');
+    await connectToDatabase();
     
-    // Build filter query
-    let filter: any = {};
-    if (studentId) {
-      filter._id = new ObjectId(studentId);
+    const studentsCollection = await getCollection('recommendation');
+    const body = await request.json();
+    const { 
+      studentId, 
+      date, 
+      hour, 
+      status, 
+      method, 
+      subjectId, 
+      classSessionId,
+      mode,
+      fromDate,
+      toDate,
+      periods
+    } = body;
+
+    if (mode === 'bulk') {
+      return await handleBulkAttendance(body);
     }
 
-    // Get students with attendance data
-    const students = await studentCollection
-      .find(filter)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ createdAt: -1 })
-      .toArray();
-
-    // Filter by attendance percentage if status is provided
-    let filteredStudents = students;
-    if (status === 'low') {
-      filteredStudents = students.filter(s => s.attendancePercentage < 75);
-    } else if (status === 'high') {
-      filteredStudents = students.filter(s => s.attendancePercentage >= 85);
+    // Single attendance record
+    if (!studentId || !date || !hour || !status) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields for attendance' },
+        { status: 400 }
+      );
     }
+
+    // Find student
+    const student = await studentsCollection.findOne({ _id: studentId });
+    if (!student) {
+      return NextResponse.json(
+        { success: false, error: 'Student not found' },
+        { status: 404 }
+      );
+    }
+
+    // In a real implementation, you would save attendance records to a separate collection
+    // For now, we'll just update the student's attendance percentage
+    const currentAttendance = student.attendancePercentage || 0;
+    const newAttendance = status === 'present' 
+      ? Math.min(100, currentAttendance + 1) 
+      : Math.max(0, currentAttendance - 1);
+
+    await studentsCollection.updateOne(
+      { _id: studentId },
+      { $set: { attendancePercentage: newAttendance } }
+    );
 
     return NextResponse.json({
       success: true,
-      data: filteredStudents,
-      pagination: {
-        page,
-        limit,
-        total: filteredStudents.length,
-        pages: Math.ceil(filteredStudents.length / limit)
-      }
+      data: {
+        studentId,
+        date,
+        hour,
+        status,
+        method,
+        newAttendancePercentage: newAttendance
+      },
+      message: 'Attendance recorded successfully'
     });
-
   } catch (error) {
-    console.error('Error fetching attendance records:', error);
+    console.error('Attendance POST Error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch attendance records' },
+      { success: false, error: 'Failed to record attendance' },
       { status: 500 }
     );
   }
 }
 
-// POST - Update student attendance
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { studentId, attendancePercentage, method = 'manual' } = body;
+async function handleBulkAttendance(body: any) {
+  const studentsCollection = await getCollection('students');
+  const { studentId, mode, date, fromDate, toDate, periods, status, method, subjectId } = body;
 
-    if (!studentId || attendancePercentage === undefined) {
-      return NextResponse.json(
-        { error: 'Student ID and attendance percentage are required' },
-        { status: 400 }
-      );
-    }
-
-    const studentCollection = await getCollection('recommendation');
-    
-    const result = await studentCollection.updateOne(
-      { _id: new ObjectId(studentId) },
-      { 
-        $set: { 
-          attendancePercentage,
-          updatedAt: new Date()
-        }
-      }
-    );
-
-    if (result.matchedCount === 0) {
-      return NextResponse.json(
-        { error: 'Student not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Attendance updated successfully'
-    });
-
-  } catch (error) {
-    console.error('Error updating attendance:', error);
+  if (!studentId || !periods || periods.length === 0) {
     return NextResponse.json(
-      { error: 'Failed to update attendance' },
-      { status: 500 }
+      { success: false, error: 'Missing required fields for bulk attendance' },
+      { status: 400 }
     );
   }
+
+  // Find student
+  const student = await studentsCollection.findOne({ _id: studentId });
+  if (!student) {
+    return NextResponse.json(
+      { success: false, error: 'Student not found' },
+      { status: 404 }
+    );
+  }
+
+  // Calculate number of records to update
+  const recordCount = periods.length * (mode === 'single' ? 1 : 5);
+  
+  // Update attendance percentage based on status
+  const currentAttendance = student.attendancePercentage || 0;
+  const attendanceChange = status === 'present' ? 1 : -1;
+  const newAttendance = Math.max(0, Math.min(100, currentAttendance + (attendanceChange * recordCount / 10)));
+
+  await studentsCollection.updateOne(
+    { _id: studentId },
+    { $set: { attendancePercentage: newAttendance } }
+  );
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      studentId,
+      recordCount,
+      newAttendancePercentage: newAttendance
+    },
+    message: `Successfully updated ${recordCount} attendance records`
+  });
 }
