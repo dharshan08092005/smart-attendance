@@ -1,144 +1,230 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCollection } from '@/lib/mongodb';
+import { connectToDatabase, getCollection } from '@/lib/mongodb';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// GET - Get dashboard analytics and statistics
 export async function GET(request: NextRequest) {
   try {
-    const studentCollection = await getCollection('recommendation');
-    const facultyCollection = await getCollection('faculty');
-    const adminCollection = await getCollection('admin');
+    await connectToDatabase();
+    
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get('type') || 'overview';
 
-    // Get basic counts
-    const totalStudents = await studentCollection.countDocuments({});
-    const totalFaculty = await facultyCollection.countDocuments({});
-    const totalAdmins = await adminCollection.countDocuments({});
+    switch (type) {
+      case 'attendance':
+        return await getAttendanceAnalytics();
+      case 'performance':
+        return await getPerformanceAnalytics();
+      case 'faculty':
+        return await getFacultyAnalytics();
+      case 'subjects':
+        return await getSubjectAnalytics();
+      default:
+        return await getOverviewAnalytics();
+    }
+  } catch (error) {
+    console.error('Analytics API Error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch analytics' },
+      { status: 500 }
+    );
+  }
+}
 
-    // Get attendance statistics
-    const attendanceStats = await studentCollection.aggregate([
+async function getOverviewAnalytics() {
+  const studentsCollection = await getCollection('recommendation');
+  const facultyCollection = await getCollection('faculty');
+  const subjectsCollection = await getCollection('subject');
+
+  const [
+    totalStudents,
+    totalFaculty,
+    totalSubjects,
+    attendanceStats,
+    gpaStats,
+    departmentStats
+  ] = await Promise.all([
+    studentsCollection.countDocuments(),
+    facultyCollection.countDocuments(),
+    subjectsCollection.countDocuments(),
+    studentsCollection.aggregate([
       {
         $group: {
           _id: null,
-          averageAttendance: { $avg: '$attendancePercentage' },
+          avgAttendance: { $avg: '$attendancePercentage' },
           minAttendance: { $min: '$attendancePercentage' },
           maxAttendance: { $max: '$attendancePercentage' }
         }
       }
-    ]).toArray();
-
-    // Get GPA statistics
-    const gpaStats = await studentCollection.aggregate([
+    ]).toArray(),
+    studentsCollection.aggregate([
       {
         $group: {
           _id: null,
-          averageGPA: { $avg: '$GPA' },
+          avgGPA: { $avg: '$GPA' },
           minGPA: { $min: '$GPA' },
           maxGPA: { $max: '$GPA' }
         }
       }
-    ]).toArray();
+    ]).toArray(),
+    facultyCollection.aggregate([
+      { $group: { _id: '$department', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]).toArray()
+  ]);
 
-    // Get students by attendance ranges
-    const attendanceRanges = await studentCollection.aggregate([
-      {
-        $bucket: {
-          groupBy: '$attendancePercentage',
-          boundaries: [0, 50, 70, 85, 100],
-          default: 'Other',
-          output: {
-            count: { $sum: 1 },
-            students: { $push: { name: '$name', email: '$email', attendance: '$attendancePercentage' } }
-          }
-        }
-      }
-    ]).toArray();
+  return NextResponse.json({
+    success: true,
+    data: {
+      overview: {
+        totalStudents,
+        totalFaculty,
+        totalSubjects
+      },
+      attendance: attendanceStats[0] || { avgAttendance: 0, minAttendance: 0, maxAttendance: 0 },
+      gpa: gpaStats[0] || { avgGPA: 0, minGPA: 0, maxGPA: 0 },
+      departments: departmentStats
+    }
+  });
+}
 
-    // Get students by GPA ranges
-    const gpaRanges = await studentCollection.aggregate([
-      {
-        $bucket: {
-          groupBy: '$GPA',
-          boundaries: [0, 2.0, 2.5, 3.0, 3.5, 4.0],
-          default: 'Other',
-          output: {
-            count: { $sum: 1 },
-            students: { $push: { name: '$name', email: '$email', gpa: '$GPA' } }
-          }
-        }
-      }
-    ]).toArray();
-
-    // Get faculty by department
-    const facultyByDepartment = await facultyCollection.aggregate([
-      {
-        $group: {
-          _id: '$department',
+async function getAttendanceAnalytics() {
+  const studentsCollection = await getCollection('recommendation');
+  
+  const attendanceRanges = await studentsCollection.aggregate([
+    {
+      $bucket: {
+        groupBy: '$attendancePercentage',
+        boundaries: [0, 25, 50, 75, 90, 100],
+        default: 'Other',
+        output: {
           count: { $sum: 1 },
-          faculty: { $push: { name: '$name', email: '$email' } }
+          students: { $push: { name: '$name', registrationNumber: '$registrationNumber', attendance: '$attendancePercentage' } }
         }
       }
-    ]).toArray();
+    }
+  ]).toArray();
 
-    // Get recent students (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const recentStudents = await studentCollection
-      .find({ createdAt: { $gte: thirtyDaysAgo } })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .toArray();
+  const lowAttendanceStudents = await studentsCollection.find({
+    attendancePercentage: { $lt: 75 }
+  }).limit(10).toArray();
 
-    // Get students with low attendance (< 75%)
-    const lowAttendanceStudents = await studentCollection
-      .find({ attendancePercentage: { $lt: 75 } })
-      .sort({ attendancePercentage: 1 })
-      .limit(10)
-      .toArray();
+  return NextResponse.json({
+    success: true,
+    data: {
+      attendanceRanges,
+      lowAttendanceStudents
+    }
+  });
+}
 
-    // Get students with low GPA (< 2.5)
-    const lowGPAStudents = await studentCollection
-      .find({ GPA: { $lt: 2.5 } })
-      .sort({ GPA: 1 })
-      .limit(10)
-      .toArray();
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        overview: {
-          totalStudents,
-          totalFaculty,
-          totalAdmins,
-          averageAttendance: attendanceStats[0]?.averageAttendance || 0,
-          averageGPA: gpaStats[0]?.averageGPA || 0
-        },
-        attendanceStats: {
-          average: attendanceStats[0]?.averageAttendance || 0,
-          min: attendanceStats[0]?.minAttendance || 0,
-          max: attendanceStats[0]?.maxAttendance || 0,
-          ranges: attendanceRanges
-        },
-        gpaStats: {
-          average: gpaStats[0]?.averageGPA || 0,
-          min: gpaStats[0]?.minGPA || 0,
-          max: gpaStats[0]?.maxGPA || 0,
-          ranges: gpaRanges
-        },
-        facultyByDepartment,
-        recentStudents,
-        lowAttendanceStudents,
-        lowGPAStudents
+async function getPerformanceAnalytics() {
+  const studentsCollection = await getCollection('recommendation');
+  
+  const performanceData = await studentsCollection.aggregate([
+    {
+      $group: {
+        _id: null,
+        avgGPA: { $avg: '$GPA' },
+        avgAttendance: { $avg: '$attendancePercentage' },
+        avgLeaves: { $avg: '$leavesInLastMonth' },
+        avgOtpMissRate: { $avg: '$otpMissRate' }
       }
-    });
+    }
+  ]).toArray();
 
-  } catch (error) {
-    console.error('Error fetching analytics:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch analytics' },
-      { status: 500 }
-    );
-  }
+  const topPerformers = await studentsCollection.find()
+    .sort({ GPA: -1, attendancePercentage: -1 })
+    .limit(10)
+    .toArray();
+
+  const riskStudents = await studentsCollection.find({
+    $or: [
+      { attendancePercentage: { $lt: 75 } },
+      { GPA: { $lt: 2.5 } },
+      { leavesInLastMonth: { $gt: 5 } }
+    ]
+  }).limit(10).toArray();
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      performance: performanceData[0] || {},
+      topPerformers,
+      riskStudents
+    }
+  });
+}
+
+async function getFacultyAnalytics() {
+  const facultyCollection = await getCollection('faculty');
+  const subjectsCollection = await getCollection('subject');
+  const studentsCollection = await getCollection('recommendation');
+  
+  const facultyStats = await facultyCollection.aggregate([
+    {
+      $lookup: {
+        from: 'subjects',
+        localField: 'subjects',
+        foreignField: '_id',
+        as: 'subjectDetails'
+      }
+    },
+    {
+      $lookup: {
+        from: 'students',
+        localField: 'assignedStudents',
+        foreignField: '_id',
+        as: 'studentDetails'
+      }
+    },
+    {
+      $project: {
+        name: 1,
+        department: 1,
+        subjectCount: { $size: '$subjects' },
+        studentCount: { $size: '$assignedStudents' },
+        subjects: '$subjectDetails.name'
+      }
+    }
+  ]).toArray();
+
+  const departmentStats = await facultyCollection.aggregate([
+    { $group: { _id: '$department', count: { $sum: 1 } } },
+    { $sort: { count: -1 } }
+  ]).toArray();
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      facultyStats,
+      departmentStats
+    }
+  });
+}
+
+async function getSubjectAnalytics() {
+  const subjectsCollection = await getCollection('subject');
+  const facultyCollection = await getCollection('faculty');
+  
+  const subjectStats = await subjectsCollection.aggregate([
+    { $group: { _id: '$type', count: { $sum: 1 } } }
+  ]).toArray();
+
+  const subjectUsage = await facultyCollection.aggregate([
+    { $unwind: '$subjects' },
+    { $lookup: { from: 'subjects', localField: 'subjects', foreignField: '_id', as: 'subjectDetails' } },
+    { $unwind: '$subjectDetails' },
+    { $group: { _id: '$subjectDetails.name', count: { $sum: 1 }, code: { $first: '$subjectDetails.code' } } },
+    { $sort: { count: -1 } }
+  ]).toArray();
+
+  return NextResponse.json({
+    success: true,
+    data: {
+      subjectStats,
+      subjectUsage
+    }
+  });
 }
