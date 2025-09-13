@@ -66,6 +66,8 @@ export default function FacultyDashboardPage() {
 
   // State for real data
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
+  const [mentees, setMentees] = useState<any[]>([]);
+  const [timetable, setTimetable] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [facultyId, setFacultyId] = useState<string>('');
 
@@ -76,12 +78,13 @@ export default function FacultyDashboardPage() {
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [chatInput, setChatInput] = useState<string>("");
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: "user" | "assistant"; content: string }>>([
-    { id: "m1", role: "assistant", content: "Hi! How can I help you today?" },
+    { id: "m1", role: "assistant", content: "Hi! I'm your Student Skill Advisor AI. I can help you with student performance insights, attendance analysis, and academic guidance. How can I assist you today?" },
   ]);
   const [markedStudents, setMarkedStudents] = useState<MarkedStudent[]>([]);
   const [otpExpiresIn, setOtpExpiresIn] = useState<number>(0); // seconds remaining
   const [otpExpirationAt, setOtpExpirationAt] = useState<number | null>(null);
   const [currentPeriodKey, setCurrentPeriodKey] = useState<string>(getPeriodKey(new Date()));
+  const [isChatLoading, setIsChatLoading] = useState<boolean>(false);
 
   // Load faculty data on component mount
   useEffect(() => {
@@ -108,6 +111,20 @@ export default function FacultyDashboardPage() {
                 status: leave.status
               })));
             }
+
+            // Load mentees
+            const menteesResponse = await fetch(`/api/faculty/mentees?facultyId=${userData.id}`);
+            const menteesData = await menteesResponse.json();
+            if (menteesData.success) {
+              setMentees(menteesData.data);
+            }
+
+            // Load timetable
+            const timetableResponse = await fetch(`/api/faculty/timetable?facultyId=${userData.id}`);
+            const timetableData = await timetableResponse.json();
+            if (timetableData.success) {
+              setTimetable(timetableData.data.timetable);
+            }
           }
         } else {
           // For testing purposes, use the test faculty ID
@@ -125,17 +142,27 @@ export default function FacultyDashboardPage() {
     loadFacultyData();
   }, []);
 
-  const timetable: TimetableEntry[] = useMemo(
-    () => [
+  // Use real timetable data from API
+  const displayTimetable = useMemo(() => {
+    if (timetable.length > 0) {
+      return timetable.map((entry: any) => ({
+        id: entry.id || `TT${Math.random()}`,
+        day: entry.day,
+        hour: entry.hour,
+        subject: entry.subject,
+        room: entry.room
+      }));
+    }
+    // Fallback to default timetable
+    return [
       { id: "TT1", day: "Mon", hour: "09:00-10:00", subject: "DBMS", room: "A-201" },
       { id: "TT2", day: "Mon", hour: "11:00-12:00", subject: "OS", room: "Lab-2" },
       { id: "TT3", day: "Tue", hour: "10:00-11:00", subject: "CN", room: "A-105" },
       { id: "TT4", day: "Wed", hour: "14:00-15:00", subject: "ML", room: "A-301" },
       { id: "TT5", day: "Thu", hour: "09:00-10:00", subject: "SE", room: "A-101" },
       { id: "TT6", day: "Fri", hour: "13:00-14:00", subject: "DBMS", room: "A-201" },
-    ],
-    []
-  );
+    ];
+  }, [timetable]);
 
   async function handleLeaveAction(id: string, next: "approved" | "rejected"): Promise<void> {
     try {
@@ -249,19 +276,114 @@ export default function FacultyDashboardPage() {
     }
   }
 
-  function handleSendMessage(): void {
+  async function handleSendMessage(): Promise<void> {
     const text = chatInput.trim();
-    if (!text) return;
+    if (!text || !facultyId || isChatLoading) return;
+    
     const userMsg = { id: `u-${Date.now()}`, role: "user" as const, content: text };
     setChatMessages((curr) => [...curr, userMsg]);
     setChatInput("");
-    // Mock assistant response
-    setTimeout(() => {
-      setChatMessages((curr) => [
-        ...curr,
-        { id: `a-${Date.now()}`, role: "assistant", content: "Thanks! I'll look into that." },
-      ]);
-    }, 400);
+    setIsChatLoading(true);
+
+    try {
+      // Direct integration with Student Skill Advisor AI
+      const response = await fetch('https://voicepython-studentrag.hf.space/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          query: text,
+          faculty_id: facultyId,
+          context: {
+            department: 'Computer Science',
+            faculty_name: 'SANDHIYA',
+            mentees_count: mentees.length,
+            pending_leaves: leaves.length,
+            current_period: getCurrentPeriod(),
+            timestamp: new Date().toISOString()
+          },
+          collection: "recommendation"
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI service responded with status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Process the AI response
+      let responseMessage = "I'm sorry, I couldn't process your request at the moment.";
+      
+      if (data.response) {
+        responseMessage = data.response;
+      } else if (data.answer) {
+        responseMessage = data.answer;
+      } else if (data.message) {
+        responseMessage = data.message;
+      }
+
+      // Add additional context if available
+      if (data.documents && data.documents.length > 0) {
+        responseMessage += "\n\nBased on the student data, here are some relevant insights:";
+        data.documents.forEach((doc: any, index: number) => {
+          if (doc.content) {
+            responseMessage += `\n\n${index + 1}. ${doc.content}`;
+          }
+        });
+      }
+
+      // Add AI response
+      setChatMessages((curr) => [...curr, {
+        id: `a-${Date.now()}`,
+        role: "assistant",
+        content: responseMessage
+      }]);
+
+    } catch (error) {
+      console.error('Chat error:', error);
+      
+      // Fallback to local API if HF Space is unavailable
+      try {
+        const fallbackResponse = await fetch('/api/faculty/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: text,
+            facultyId: facultyId,
+            context: {
+              department: 'Computer Science',
+              timestamp: new Date().toISOString()
+            }
+          }),
+        });
+
+        const fallbackData = await fallbackResponse.json();
+        
+        if (fallbackData.success) {
+          setChatMessages((curr) => [...curr, {
+            id: `a-${Date.now()}`,
+            role: "assistant",
+            content: fallbackData.data.message
+          }]);
+        } else {
+          throw new Error('Fallback also failed');
+        }
+      } catch (fallbackError) {
+        console.error('Fallback chat error:', fallbackError);
+        setChatMessages((curr) => [...curr, {
+          id: `a-${Date.now()}`,
+          role: "assistant",
+          content: "Sorry, I'm currently experiencing connectivity issues. Please try again in a moment."
+        }]);
+      }
+    } finally {
+      setIsChatLoading(false);
+    }
   }
 
   function handleMockMarkAttendance(): void {
@@ -284,20 +406,6 @@ export default function FacultyDashboardPage() {
     });
   }
 
-  function handleSendMessage(): void {
-    const text = chatInput.trim();
-    if (!text) return;
-    const userMsg = { id: `u-${Date.now()}`, role: "user" as const, content: text };
-    setChatMessages((curr) => [...curr, userMsg]);
-    setChatInput("");
-    // Mock assistant response
-    setTimeout(() => {
-      setChatMessages((curr) => [
-        ...curr,
-        { id: `a-${Date.now()}`, role: "assistant", content: "Thanks! I'll look into that." },
-      ]);
-    }, 400);
-  }
 
   const totalMarked = markedStudents.length;
 
@@ -533,7 +641,7 @@ export default function FacultyDashboardPage() {
               <h2 className="text-base font-semibold text-foreground">Your Timetable</h2>
             </div>
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {timetable.map((slot) => (
+              {displayTimetable.map((slot) => (
                 <div key={slot.id} className="rounded-lg border border-gray-200 p-4 bg-gray-50">
                   <div className="text-xs/5 text-foreground/60">{slot.day}</div>
                   <div className="mt-1 font-medium text-foreground">{slot.subject}</div>
@@ -551,16 +659,37 @@ export default function FacultyDashboardPage() {
               <h2 className="text-base font-semibold text-foreground">Your Mentees</h2>
             </div>
             <div className="p-4">
-              <div className="text-sm text-foreground/60 mb-4">Connect this to your backend to fetch mentees from `Faculty.mentees`.</div>
+              {mentees.length === 0 ? (
+                <div className="text-sm text-foreground/60 mb-4">No mentees assigned to you yet.</div>
+              ) : (
+                <div className="text-sm text-foreground/60 mb-4">Your assigned mentees ({mentees.length} total)</div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1,2,3].map((i) => (
-                  <div key={i} className="rounded-lg border border-gray-200 p-4 bg-gray-50">
-                    <div className="font-medium text-foreground">Mentee {i}</div>
-                    <div className="text-sm text-foreground/60">Reg: 21CSE0{i}1</div>
-                    <div className="text-sm text-foreground/60">Attendance: 92%</div>
-                    <div className="text-sm text-foreground/60">GPA: 8.{i}</div>
+                {mentees.length === 0 ? (
+                  <div className="col-span-2 text-center py-8 text-foreground/60">
+                    <div className="text-lg mb-2">No mentees assigned</div>
+                    <div className="text-sm">Contact admin to assign mentees to you</div>
                   </div>
-                ))}
+                ) : (
+                  mentees.map((mentee: any) => (
+                    <div key={mentee.id} className="rounded-lg border border-gray-200 p-4 bg-gray-50">
+                      <div className="font-medium text-foreground">{mentee.name}</div>
+                      <div className="text-sm text-foreground/60">Reg: {mentee.registrationNumber}</div>
+                      <div className="text-sm text-foreground/60">Roll: {mentee.rollNumber}</div>
+                      <div className="text-sm text-foreground/60">Attendance: {mentee.attendancePercentage}%</div>
+                      <div className="text-sm text-foreground/60">GPA: {mentee.GPA}</div>
+                      <div className="text-xs mt-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          mentee.riskLevel === 'high' ? 'bg-red-100 text-red-600' :
+                          mentee.riskLevel === 'medium' ? 'bg-yellow-100 text-yellow-600' :
+                          'bg-green-100 text-green-600'
+                        }`}>
+                          {mentee.riskLevel} risk
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </section>
@@ -595,21 +724,30 @@ export default function FacultyDashboardPage() {
         </div>
       </div>
 
-      {/* Floating Chat Button */}
+      {/* Floating Chat Button with Enhanced Visual Feedback */}
       <button
-        className="fixed bottom-20 right-4 h-12 w-12 rounded-full bg-blue-600 text-white shadow-lg grid place-items-center hover:bg-blue-700"
+        className={`fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg grid place-items-center transition-all duration-200 ${
+          isChatLoading 
+            ? 'bg-gray-400 cursor-not-allowed' 
+            : 'bg-blue-600 hover:bg-blue-700 hover:scale-110'
+        } text-white`}
         onClick={() => setIsChatOpen(true)}
-        aria-label="Open Chatbot"
+        aria-label="Open AI Assistant"
+        disabled={isChatLoading}
       >
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M21 12c0 4.418-4.03 8-9 8-1.06 0-2.07-.16-3-.46L3 20l1.07-3.2C3.4 15.55 3 13.82 3 12 3 7.582 7.03 4 12 4s9 3.582 9 8z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="9" cy="12" r="1" fill="currentColor"/>
-          <circle cx="12" cy="12" r="1" fill="currentColor"/>
-          <circle cx="15" cy="12" r="1" fill="currentColor"/>
-        </svg>
+        {isChatLoading ? (
+          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 12c0 4.418-4.03 8-9 8-1.06 0-2.07-.16-3-.46L3 20l1.07-3.2C3.4 15.55 3 13.82 3 12 3 7.582 7.03 4 12 4s9 3.582 9 8z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="9" cy="12" r="1" fill="currentColor"/>
+            <circle cx="12" cy="12" r="1" fill="currentColor"/>
+            <circle cx="15" cy="12" r="1" fill="currentColor"/>
+          </svg>
+        )}
       </button>
 
-      {/* Chat Slide-over */}
+      {/* Enhanced Chat Slide-over with AI Integration Status */}
       {isChatOpen && (
         <div className="fixed inset-0 z-40">
           <div
@@ -618,10 +756,16 @@ export default function FacultyDashboardPage() {
             aria-hidden="true"
           />
           <aside className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl flex flex-col">
-            <div className="px-4 py-3 border-b flex items-center justify-between">
-              <div className="font-medium">Chat Assistant</div>
+            <div className="px-4 py-3 border-b flex items-center justify-between bg-gradient-to-r from-blue-50 to-purple-50">
+              <div>
+                <div className="font-medium text-gray-900">AI Student Advisor</div>
+                <div className="text-xs text-gray-500 flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  Connected to Student RAG System
+                </div>
+              </div>
               <button
-                className="h-8 w-8 grid place-items-center rounded hover:bg-gray-100"
+                className="h-8 w-8 grid place-items-center rounded hover:bg-gray-100 transition-colors"
                 onClick={() => setIsChatOpen(false)}
                 aria-label="Close Chat"
               >
@@ -630,39 +774,70 @@ export default function FacultyDashboardPage() {
                 </svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gray-50">
               {chatMessages.map((m) => (
                 <div key={m.id} className={m.role === "user" ? "text-right" : "text-left"}>
                   <div
                     className={
                       m.role === "user"
-                        ? "inline-block rounded-xl px-3 py-2 bg-blue-600 text-white"
-                        : "inline-block rounded-xl px-3 py-2 bg-gray-100 text-gray-900"
+                        ? "inline-block rounded-xl px-3 py-2 bg-blue-600 text-white max-w-[85%] shadow-sm"
+                        : "inline-block rounded-xl px-3 py-2 bg-white text-gray-900 max-w-[85%] shadow-sm border border-gray-100"
                     }
                   >
                     {m.content}
                   </div>
+                  {m.role === "assistant" && (
+                    <div className="text-xs text-gray-400 mt-1 px-1">
+                      AI Assistant • Powered by Student RAG
+                    </div>
+                  )}
                 </div>
               ))}
+              {isChatLoading && (
+                <div className="text-left">
+                  <div className="inline-block rounded-xl px-3 py-2 bg-white text-gray-900 max-w-[85%] shadow-sm border border-gray-100">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                      <span className="text-sm text-gray-500">AI is analyzing...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="p-3 border-t">
+            <div className="p-3 border-t bg-white">
               <div className="flex gap-2">
                 <input
-                  className="flex-1 border rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Type your message..."
+                  className="flex-1 border rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder={isChatLoading ? "AI is responding..." : "Ask about student performance, attendance..."}
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSendMessage();
+                    if (e.key === "Enter" && !isChatLoading) handleSendMessage();
                   }}
+                  disabled={isChatLoading}
                 />
                 <button
-                  className="px-3 py-2 rounded-md bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50"
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${
+                    isChatLoading || !chatInput.trim()
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
+                  }`}
                   onClick={handleSendMessage}
-                  disabled={!chatInput.trim()}
+                  disabled={isChatLoading || !chatInput.trim()}
                 >
-                  Send
+                  {isChatLoading ? (
+                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    'Send'
+                  )}
                 </button>
+              </div>
+              <div className="text-xs text-gray-400 mt-2 text-center">
+                Powered by Hugging Face Student RAG System
               </div>
             </div>
           </aside>
@@ -671,4 +846,3 @@ export default function FacultyDashboardPage() {
     </div>
   );
 }
-

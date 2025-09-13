@@ -139,10 +139,35 @@ export async function POST(request: NextRequest) {
       department,
       email,
       password, // Store password as plain text
+      
+      // Contact Information (optional)
+      phone: body.phone || null,
+      office: body.office || null,
+      designation: body.designation || 'Assistant Professor',
+      
+      // OTP System
       otp: null,
       otpGeneratedAt: null,
+      otpExpiresAt: null,
+      otpPeriod: null,
+      otpSubjectId: null,
+      
+      // Academic Information
       subjects: subjectIds,
       assignedStudents: assignedStudentIds,
+      mentees: [], // Empty initially, can be assigned later
+      
+      // Timetable (empty initially)
+      timetable: [],
+      
+      // Performance Metrics
+      totalStudents: 0,
+      activeStudents: 0,
+      averageAttendance: 0,
+      
+      // Status
+      isActive: true,
+      lastLogin: null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
