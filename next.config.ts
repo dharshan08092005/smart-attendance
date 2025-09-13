@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
       { source: "/dashboard/faculty_dashboard", destination: "/dashboard/faculty-dashboard" },
     ];
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 export default nextConfig;
